@@ -103,6 +103,7 @@ body { font-family: var(--sans); background: var(--gray1); color: var(--gray5); 
 .filter-btn.fa.active { background: var(--amber); border-color: var(--amber); color: var(--white); }
 .filter-btn.fr.active { background: var(--red); border-color: var(--red); color: var(--white); }
 .filter-btn.fb.active { background: var(--blue); border-color: var(--blue); color: var(--white); }
+.filter-btn.fok.active { background: var(--green); border-color: var(--green); color: var(--white); }
 .table-wrap { overflow-x: auto; max-height: 52vh; overflow-y: auto; }
 table { width: 100%; border-collapse: collapse; }
 thead th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); text-align: left; padding: 10px 16px; background: var(--gray1); border-bottom: 1px solid var(--gray2); white-space: nowrap; position: sticky; top: 0; z-index: 2; font-weight: 700; }
@@ -500,6 +501,7 @@ let masterCols = [
   { name: 'Humd Req.%',         type: 'compare', enabled: true },
   { name: 'Vent Req',           type: 'compare', enabled: true },
   { name: 'IMDG',               type: 'compare', enabled: true },
+  { name: 'Hzd UNNbrs',         type: 'compare', enabled: true },
   { name: 'O/B Actual Visit',   type: 'vessel',  enabled: true },
   { name: 'Category',           type: 'meta',    enabled: true },
 ];
@@ -514,6 +516,7 @@ let compMap = {
   'Humd Req.%':         'Humidity, Humd, Humidity %',
   'Vent Req':           'Ventilation, Vent, Vent Req',
   'IMDG':               'IMOCLS, IMO Class, IMDG, IMO/UN',
+  'Hzd UNNbrs':         'Hzd UNNbrs, UN Numbers, UN No, UNNO, HazardousUNNbrs',
 };
 // ISO type mapping: N4 value → list of possible comparison values
 let isoMap = {
@@ -763,6 +766,13 @@ function normalizeISO(v) {
 
 function normalizeFE(v) { const lv=clean(v).toLowerCase(); if(['full','fcl','f'].includes(lv)) return 'FCL'; if(['empty','e','mt','mty'].includes(lv)) return 'Empty'; return clean(v); }
 
+function normalizeList(v) {
+  // Normalize comma-separated lists: sort, trim, uppercase each item
+  const s = clean(v);
+  if (!s) return '';
+  return s.split(/[,;\/]/).map(x => x.trim().toUpperCase()).filter(Boolean).sort().join(',');
+}
+
 function normComp(col, val) {
   if (col==='Line Op') return normalizeOp(val);
   if (col==='POD') return normalizePort(val);
@@ -771,6 +781,7 @@ function normComp(col, val) {
   if (col==='Humd Req.%') return normalizeReeferNum(col, val);
   if (col==='Vent Req') return normalizeReeferNum(col, val);
   if (col==='Frght Kind') return normalizeFE(val);
+  if (col==='IMDG' || col==='Hzd UNNbrs') return normalizeList(val);
   return clean(val);
 }
 function normMaster(col, val) {
@@ -780,6 +791,7 @@ function normMaster(col, val) {
   if (col==='Humd Req.%') return normalizeReeferNum(col, val);
   if (col==='Vent Req') return normalizeReeferNum(col, val);
   if (col==='Frght Kind') return normalizeFE(val);
+  if (col==='IMDG' || col==='Hzd UNNbrs') return normalizeList(val);
   return clean(val);
 }
 
@@ -1050,7 +1062,30 @@ function doCompare(masterData, compData, compDataArrays) {
     if (!cLookup[cntr]) disc.push({ container:cntr, type:'missing_in_comparison', field:'-', masterValue:'-', compValue:'-' });
   }
 
-  return { vesselName, masterTotal:Object.keys(mLookup).length, compTotal:Object.keys(cLookup).length, discrepancies:[...dups,...disc] };
+  // Build full container list with status
+  const allContainers = [];
+  const discByContainer = {};
+  [...dups,...disc].forEach(d => {
+    if (!discByContainer[d.container]) discByContainer[d.container] = [];
+    discByContainer[d.container].push(d);
+  });
+  // All containers from both lookups
+  const allCntrs = new Set([...Object.keys(mLookup), ...Object.keys(cLookup)]);
+  allCntrs.forEach(cntr => {
+    const masterRow = mLookup[cntr] || {};
+    const lineOp = clean(masterRow['Line Op'] || '');
+    allContainers.push({
+      container: cntr,
+      lineOp,
+      discrepancies: discByContainer[cntr] || [],
+      status: discByContainer[cntr] ? 'disc' : 'ok',
+      inMaster: !!mLookup[cntr],
+      inComp: !!cLookup[cntr],
+    });
+  });
+  allContainers.sort((a,b) => a.container.localeCompare(b.container));
+
+  return { vesselName, masterTotal:Object.keys(mLookup).length, compTotal:Object.keys(cLookup).length, discrepancies:[...dups,...disc], allContainers };
 }
 
 // ── RENDER RESULTS ─────────────────────────────────────────
@@ -1058,6 +1093,8 @@ function renderResults(r) {
   const sv = document.getElementById('sbVessel');
   sv.textContent = r.vesselName; sv.classList.remove('empty');
   const d = r.discrepancies;
+  const total = r.allContainers.length;
+  const okCount = r.allContainers.filter(c=>c.status==='ok').length;
   const mm = d.filter(x=>x.type==='value_mismatch').length;
   const misM = d.filter(x=>x.type==='missing_in_n4').length;
   const misC = d.filter(x=>x.type==='missing_in_comparison').length;
@@ -1074,45 +1111,73 @@ function renderResults(r) {
     </div>
     <div class="table-card">
       <div class="table-toolbar">
-        <button class="filter-btn active" onclick="applyFilter('all',this)">Todos (${d.length})</button>
+        <button class="filter-btn active" onclick="applyFilter('all',this)">Todos (${total})</button>
+        <button class="filter-btn fok" onclick="applyFilter('ok',this)">OK (${okCount})</button>
         ${mm?`<button class="filter-btn fa" onclick="applyFilter('value_mismatch',this)">Mismatch (${mm})</button>`:''}
         ${misM?`<button class="filter-btn fr" onclick="applyFilter('missing_in_n4',this)">Missing N4 (${misM})</button>`:''}
         ${misC?`<button class="filter-btn fb" onclick="applyFilter('missing_in_comparison',this)">Missing Comp. (${misC})</button>`:''}
         ${dups?`<button class="filter-btn" onclick="applyFilter('duplicate',this)">Duplicados (${dups})</button>`:''}
       </div>
-      <div class="table-wrap" id="tableWrap">${buildTable(d,null)}</div>
+      <div class="table-wrap" id="tableWrap">${buildTable(r.allContainers, null)}</div>
     </div>`;
 }
 
 function applyFilter(type, btn) {
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('tableWrap').innerHTML = buildTable(lastResult.discrepancies, type==='all'?null:type);
+  document.getElementById('tableWrap').innerHTML = buildTable(lastResult.allContainers, type==='all'?null:type);
 }
 
-function buildTable(disc, filter) {
-  const rows = filter ? disc.filter(d=>d.type===filter||d.type.startsWith(filter)) : disc;
-  if (!rows.length) return `<div class="no-disc"><span class="no-disc-icon">✓</span><div class="no-disc-text">Sin discrepancias en esta categoría</div></div>`;
+function buildTable(allContainers, filter) {
   const TL = { value_mismatch:'Mismatch', missing_in_n4:'Missing N4', missing_in_comparison:'Missing Comp.', duplicate_in_n4:'Dup. N4', duplicate_in_comparison:'Dup. Comp.' };
   const TC = { value_mismatch:'bm', missing_in_n4:'bmm', missing_in_comparison:'bmc', duplicate_in_n4:'bd', duplicate_in_comparison:'bd' };
   const GL = { value_mismatch:'gl-a', missing_in_n4:'gl-r', missing_in_comparison:'gl-b', duplicate_in_n4:'gl-p', duplicate_in_comparison:'gl-p' };
-  const grouped = {};
-  rows.forEach(d => { if(!grouped[d.container]) grouped[d.container]=[]; grouped[d.container].push(d); });
+
+  let containers = allContainers;
+  if (filter === 'ok') {
+    containers = allContainers.filter(c => c.status === 'ok');
+  } else if (filter) {
+    containers = allContainers.filter(c => c.discrepancies.some(d => d.type === filter || d.type.startsWith(filter)));
+  }
+
+  if (!containers.length) return `<div class="no-disc"><span class="no-disc-icon">✓</span><div class="no-disc-text">Sin registros en esta categoría</div></div>`;
+
   let n = 0;
-  return `<table>
-    <thead><tr><th>#</th><th>Container</th><th>Tipo</th><th>Campo</th><th>Navis N4</th><th>Comparison</th></tr></thead>
-    <tbody>${rows.map(d => {
+  const rows = [];
+  containers.forEach(c => {
+    if (c.status === 'ok') {
       n++;
-      const grp=grouped[d.container], isFirst=grp[0]===d, isMulti=grp.length>1;
-      return `<tr class="${isMulti?GL[d.type]||'':''} ${isMulti?'pl-e':''}">
+      rows.push(`<tr>
         <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
-        <td class="cntr-cell">${isFirst||!isMulti?d.container:`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
-        <td><span class="type-badge ${TC[d.type]||''}">${TL[d.type]||d.type}</span></td>
-        <td style="color:var(--gray4);font-size:12px">${d.field!=='-'?d.field:''}</td>
-        <td>${d.masterValue!=='-'?`<span class="val-m">${d.masterValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
-        <td>${d.compValue!=='-'?`<span class="val-c">${d.compValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
-      </tr>`;
-    }).join('')}</tbody></table>`;
+        <td class="cntr-cell">${c.container}</td>
+        <td style="font-size:11px;color:var(--gray4)">${c.lineOp}</td>
+        <td><span class="type-badge" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(22,163,74,0.2)">OK</span></td>
+        <td style="color:var(--gray3)" colspan="3">—</td>
+      </tr>`);
+    } else {
+      const disc = c.discrepancies;
+      disc.forEach((d, i) => {
+        n++;
+        const isFirst = i === 0;
+        const isMulti = disc.length > 1;
+        const lc = isMulti ? GL[d.type]||'' : '';
+        const pl = isMulti ? 'pl-e' : '';
+        rows.push(`<tr class="${lc} ${pl}">
+          <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
+          <td class="cntr-cell">${isFirst||!isMulti?c.container:`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
+          <td style="font-size:11px;color:var(--gray4)">${isFirst||!isMulti?c.lineOp:''}</td>
+          <td><span class="type-badge ${TC[d.type]||''}">${TL[d.type]||d.type}</span></td>
+          <td style="color:var(--gray4);font-size:12px">${d.field!=='-'?d.field:''}</td>
+          <td>${d.masterValue!=='-'?`<span class="val-m">${d.masterValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
+          <td>${d.compValue!=='-'?`<span class="val-c">${d.compValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
+        </tr>`);
+      });
+    }
+  });
+
+  return `<table>
+    <thead><tr><th>#</th><th>Container</th><th>Line Op</th><th>Tipo</th><th>Campo</th><th>Navis N4</th><th>Comparison</th></tr></thead>
+    <tbody>${rows.join('')}</tbody></table>`;
 }
 
 // ── CONFIG UI ──────────────────────────────────────────────
