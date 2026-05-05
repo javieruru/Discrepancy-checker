@@ -4,110 +4,118 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KTN · Discrepancy Checker</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --red: #E30613; --red-dim: rgba(227,6,19,0.1); --red-dim2: rgba(227,6,19,0.05);
-  --black: #111111; --black2: #1a1a1a; --black3: #252525;
-  --white: #ffffff; --gray1: #f7f7f7; --gray2: #eeeeee; --gray3: #cccccc; --gray4: #888888; --gray5: #444444;
-  --amber: #d97706; --amber-dim: rgba(217,119,6,0.1);
-  --blue: #1a56db; --blue-dim: rgba(26,86,219,0.1);
-  --sans: 'IBM Plex Sans', sans-serif; --mono: 'IBM Plex Mono', monospace;
-  --sw: 210px;
+  --navy: #1e3a5f; --navy2: #16304f; --navy3: #0f2540;
+  --red: #E30613; --red-dim: rgba(227,6,19,0.08);
+  --white: #ffffff; --gray1: #f4f6f9; --gray2: #e8ecf1; --gray3: #c8d0db; --gray4: #7a8899; --gray5: #3d4f63;
+  --green: #16a34a; --green-dim: rgba(22,163,74,0.08);
+  --amber: #d97706; --amber-dim: rgba(217,119,6,0.08);
+  --blue: #2563eb; --blue-dim: rgba(37,99,235,0.08);
+  --purple: #7c3aed; --purple-dim: rgba(124,58,237,0.08);
+  --sans: 'Inter', sans-serif; --mono: 'IBM Plex Mono', monospace;
+  --sw: 220px;
 }
 html, body { height: 100%; }
-body { font-family: var(--sans); background: var(--gray1); color: var(--black); display: flex; flex-direction: column; min-height: 100vh; }
-.app { display: flex; flex: 1; min-height: 0; }
+body { font-family: var(--sans); background: var(--gray1); color: var(--gray5); display: flex; flex-direction: column; min-height: 100vh; font-size: 14px; }
+.app { display: flex; flex: 1; }
 
-/* SIDEBAR */
-.sidebar { width: var(--sw); background: var(--black); display: flex; flex-direction: column; flex-shrink: 0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10; }
-.sb-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--black3); }
-.sb-logo-name { font-size: 12px; font-weight: 600; color: var(--white); letter-spacing: 0.07em; text-transform: uppercase; }
-.sb-logo-name b { color: var(--red); }
-.sb-logo-sub { font-size: 9px; color: var(--gray5); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--mono); }
-.sb-nav { flex: 1; padding: 10px 0; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 18px; font-size: 12px; font-weight: 500; color: var(--gray5); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
-.nav-item:hover { color: var(--gray3); background: rgba(255,255,255,0.03); }
-.nav-item.active { color: var(--white); border-left-color: var(--red); background: rgba(255,255,255,0.05); }
-.nav-icon { font-size: 14px; width: 18px; text-align: center; }
-.sb-vessel { padding: 14px 18px; border-top: 1px solid var(--black3); }
-.sv-label { font-size: 9px; color: var(--gray5); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px; font-family: var(--mono); }
-.sv-name { font-size: 13px; font-weight: 600; color: var(--red); font-family: var(--mono); letter-spacing: 0.03em; word-break: break-all; }
-.sv-name.empty { color: var(--gray5); font-size: 11px; font-weight: 400; }
+/* ── SIDEBAR ── */
+.sidebar { width: var(--sw); background: var(--navy); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 20; box-shadow: 2px 0 12px rgba(0,0,0,0.15); }
+.sb-logo { padding: 22px 18px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sb-logo-ktn { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 2px; }
+.sb-logo-name { font-size: 15px; font-weight: 600; color: var(--white); letter-spacing: -0.01em; }
+.sb-logo-name span { color: var(--red); }
+.sb-logo-ver { font-size: 9px; font-family: var(--mono); color: rgba(255,255,255,0.3); margin-top: 4px; letter-spacing: 0.08em; }
+.sb-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.45); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; position: relative; }
+.nav-item:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.05); }
+.nav-item.active { color: var(--white); border-left-color: var(--red); background: rgba(255,255,255,0.08); }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-badge { margin-left: auto; background: var(--red); color: var(--white); font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; font-family: var(--mono); }
+.nav-badge.warn { background: var(--amber); }
+.sb-vessel { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.08); }
+.sv-label { font-size: 9px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 5px; font-family: var(--mono); }
+.sv-name { font-size: 13px; font-weight: 600; color: var(--white); font-family: var(--mono); word-break: break-all; }
+.sv-name.empty { color: rgba(255,255,255,0.2); font-size: 11px; font-weight: 400; }
 
-/* MAIN */
-.main { margin-left: var(--sw); flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-width: 0; }
-.topbar { background: var(--white); border-bottom: 1px solid var(--gray2); padding: 0 28px; height: 54px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 5; }
-.topbar-title { font-size: 14px; font-weight: 600; color: var(--black); }
-.topbar-actions { margin-left: auto; display: flex; gap: 8px; }
-.btn { font-family: var(--sans); font-size: 12px; font-weight: 600; padding: 7px 18px; border-radius: 3px; border: none; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
-.btn-primary { background: var(--red); color: var(--white); }
-.btn-primary:hover { background: #c0050f; }
-.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
-.btn-ghost { background: none; border: 1px solid var(--gray2); color: var(--gray4); display: none; }
-.btn-ghost:hover { border-color: var(--gray3); color: var(--black); }
-.btn-ghost.visible { display: inline-flex; }
-.btn-ghost.danger { border-color: #fcc; color: var(--red); display: inline-flex; }
-.btn-ghost.danger:hover { background: var(--red-dim2); }
+/* ── MAIN ── */
+.main { margin-left: var(--sw); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: var(--white); border-bottom: 1px solid var(--gray2); padding: 0 28px; height: 56px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.topbar-title { font-size: 15px; font-weight: 600; color: var(--navy); }
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.btn { font-family: var(--sans); font-size: 12px; font-weight: 600; padding: 7px 18px; border-radius: 4px; border: none; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.01em; }
+.btn-primary { background: var(--navy); color: var(--white); }
+.btn-primary:hover { background: var(--navy2); }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-outline { background: none; border: 1.5px solid var(--gray2); color: var(--gray4); display: none; }
+.btn-outline:hover { border-color: var(--gray3); color: var(--gray5); }
+.btn-outline.visible { display: inline-flex; }
+.btn-outline.danger { border-color: #fcc; color: var(--red); display: inline-flex; }
+.btn-outline.danger:hover { background: var(--red-dim); }
+.btn-outline.save { border-color: #bfdbfe; color: var(--blue); }
+.btn-outline.save:hover { background: var(--blue-dim); }
 .content { flex: 1; padding: 28px; overflow-y: auto; }
 .section { display: none; }
 .section.active { display: block; }
 
-/* UPLOAD */
+/* ── UPLOAD ── */
 .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-.drop-zone { border: 1.5px dashed var(--gray2); border-radius: 6px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white); position: relative; }
+.drop-zone { border: 2px dashed var(--gray2); border-radius: 8px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white); position: relative; }
 .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.drop-zone:hover, .drop-zone.dragover { border-color: var(--red); background: var(--red-dim2); }
-.drop-zone.loaded { border-style: solid; border-width: 1.5px; border-color: var(--red); }
-.drop-zone.loaded-b { border-style: solid; border-width: 1.5px; border-color: var(--blue); }
-.drop-label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; font-family: var(--mono); }
-.drop-icon { font-size: 26px; display: block; margin-bottom: 8px; opacity: 0.35; }
-.drop-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--navy); background: rgba(30,58,95,0.03); }
+.drop-zone.loaded { border-style: solid; border-color: var(--navy); }
+.drop-zone.loaded-b { border-style: solid; border-color: var(--blue); }
+.drop-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin-bottom: 10px; font-family: var(--mono); }
+.drop-icon { font-size: 26px; display: block; margin-bottom: 8px; opacity: 0.3; }
+.drop-title { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
 .drop-sub { font-size: 11px; color: var(--gray4); }
 .file-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 12px; }
-.file-tag { font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 2px; display: flex; align-items: center; gap: 5px; }
-.ft-master { background: var(--red-dim); border: 1px solid rgba(227,6,19,0.2); color: var(--red); }
-.ft-comp { background: var(--blue-dim); border: 1px solid rgba(26,86,219,0.2); color: var(--blue); }
-.ft-rm { background: none; border: none; color: inherit; cursor: pointer; font-size: 14px; padding: 0; opacity: 0.6; line-height: 1; }
+.file-tag { font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 3px; display: flex; align-items: center; gap: 5px; }
+.ft-m { background: rgba(30,58,95,0.08); border: 1px solid rgba(30,58,95,0.2); color: var(--navy); }
+.ft-c { background: var(--blue-dim); border: 1px solid rgba(37,99,235,0.2); color: var(--blue); }
+.ft-rm { background: none; border: none; color: inherit; cursor: pointer; font-size: 14px; padding: 0; opacity: 0.5; line-height: 1; }
 .ft-rm:hover { opacity: 1; }
-.info-box { font-size: 11px; color: var(--gray4); background: var(--white); border: 1px solid var(--gray2); border-radius: 5px; padding: 12px 16px; line-height: 1.7; }
-.info-box code { font-family: var(--mono); font-size: 10px; background: var(--gray1); padding: 1px 5px; border-radius: 2px; color: var(--black); }
+.info-box { font-size: 12px; color: var(--gray4); background: var(--white); border: 1px solid var(--gray2); border-radius: 6px; padding: 12px 16px; line-height: 1.7; border-left: 3px solid var(--navy); }
+.info-box code { font-family: var(--mono); font-size: 10px; background: var(--gray1); padding: 1px 5px; border-radius: 3px; color: var(--navy); }
 
-/* RESULTS */
+/* ── RESULTS ── */
 .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
-.stat-card { background: var(--white); border: 1px solid var(--gray2); border-radius: 5px; padding: 14px 16px; border-top: 3px solid var(--gray2); }
+.stat-card { background: var(--white); border: 1px solid var(--gray2); border-radius: 6px; padding: 16px; border-top: 3px solid var(--gray2); }
+.stat-card.navy { border-top-color: var(--navy); }
 .stat-card.red { border-top-color: var(--red); }
 .stat-card.amber { border-top-color: var(--amber); }
 .stat-card.blue { border-top-color: var(--blue); }
-.stat-card.black { border-top-color: var(--black); }
-.stat-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); margin-bottom: 6px; font-family: var(--mono); }
-.stat-value { font-size: 26px; font-weight: 600; line-height: 1; font-family: var(--mono); color: var(--black); }
+.stat-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); margin-bottom: 8px; font-family: var(--mono); }
+.stat-value { font-size: 28px; font-weight: 700; line-height: 1; font-family: var(--mono); color: var(--navy); }
 .stat-value.red { color: var(--red); }
 .stat-value.amber { color: var(--amber); }
 .stat-value.blue { color: var(--blue); }
-.stat-sub { font-size: 10px; color: var(--gray4); margin-top: 3px; }
-.table-card { background: var(--white); border: 1px solid var(--gray2); border-radius: 5px; overflow: hidden; }
-.table-toolbar { padding: 10px 16px; border-bottom: 1px solid var(--gray2); display: flex; gap: 6px; flex-wrap: wrap; }
-.filter-btn { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 11px; border-radius: 2px; cursor: pointer; border: 1px solid var(--gray2); background: none; color: var(--gray4); transition: all 0.15s; }
-.filter-btn.active { background: var(--black); border-color: var(--black); color: var(--white); }
+.stat-sub { font-size: 10px; color: var(--gray4); margin-top: 4px; }
+.table-card { background: var(--white); border: 1px solid var(--gray2); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.table-toolbar { padding: 10px 16px; border-bottom: 1px solid var(--gray2); display: flex; gap: 6px; flex-wrap: wrap; background: var(--gray1); }
+.filter-btn { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 12px; border-radius: 3px; cursor: pointer; border: 1px solid var(--gray2); background: var(--white); color: var(--gray4); transition: all 0.15s; font-weight: 600; }
+.filter-btn:hover { border-color: var(--gray3); color: var(--gray5); }
+.filter-btn.active { background: var(--navy); border-color: var(--navy); color: var(--white); }
 .filter-btn.fa.active { background: var(--amber); border-color: var(--amber); color: var(--white); }
 .filter-btn.fr.active { background: var(--red); border-color: var(--red); color: var(--white); }
 .filter-btn.fb.active { background: var(--blue); border-color: var(--blue); color: var(--white); }
-.table-wrap { overflow-x: auto; max-height: 55vh; overflow-y: auto; }
+.table-wrap { overflow-x: auto; max-height: 52vh; overflow-y: auto; }
 table { width: 100%; border-collapse: collapse; }
-thead th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); text-align: left; padding: 10px 16px; background: var(--gray1); border-bottom: 1px solid var(--gray2); white-space: nowrap; position: sticky; top: 0; z-index: 2; }
+thead th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); text-align: left; padding: 10px 16px; background: var(--gray1); border-bottom: 1px solid var(--gray2); white-space: nowrap; position: sticky; top: 0; z-index: 2; font-weight: 700; }
 tbody tr { border-bottom: 1px solid var(--gray2); transition: background 0.1s; }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--gray1); }
 tbody td { padding: 9px 16px; font-size: 12px; white-space: nowrap; vertical-align: middle; }
-.cntr-cell { font-size: 13px; font-weight: 600; color: var(--black); letter-spacing: 0.03em; }
-.type-badge { display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 7px; border-radius: 2px; white-space: nowrap; font-weight: 600; }
+.cntr-cell { font-size: 13px; font-weight: 600; color: var(--navy); letter-spacing: 0.02em; }
+.type-badge { display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; white-space: nowrap; font-weight: 700; }
 .bm { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(217,119,6,0.2); }
 .bmm { background: var(--red-dim); color: var(--red); border: 1px solid rgba(227,6,19,0.2); }
-.bmc { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(26,86,219,0.2); }
-.bd { background: #f3e8ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+.bmc { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(37,99,235,0.2); }
+.bd { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(124,58,237,0.2); }
 .val-m { color: var(--amber); font-family: var(--mono); font-size: 11px; font-weight: 600; }
 .val-c { color: var(--blue); font-family: var(--mono); font-size: 11px; font-weight: 600; }
 .no-disc { text-align: center; padding: 56px 16px; }
@@ -116,61 +124,91 @@ tbody td { padding: 9px 16px; font-size: 12px; white-space: nowrap; vertical-ali
 .gl-a { border-left: 3px solid var(--amber) !important; }
 .gl-r { border-left: 3px solid var(--red) !important; }
 .gl-b { border-left: 3px solid var(--blue) !important; }
-.gl-p { border-left: 3px solid #7c3aed !important; }
+.gl-p { border-left: 3px solid var(--purple) !important; }
 .pl-e td:first-child { padding-left: 13px; }
-.empty-state { text-align: center; padding: 80px 20px; color: var(--gray3); font-size: 13px; }
-.empty-icon { font-size: 40px; display: block; margin-bottom: 12px; opacity: 0.4; }
+.empty-state { text-align: center; padding: 80px 20px; }
+.empty-icon { font-size: 42px; display: block; margin-bottom: 14px; opacity: 0.25; }
+.empty-text { font-size: 13px; color: var(--gray4); line-height: 1.7; }
 
-/* CONFIG */
-.config-tabs { display: flex; border-bottom: none; margin-bottom: 0; background: var(--white); border-radius: 5px 5px 0 0; overflow: hidden; border: 1px solid var(--gray2); }
-.ctab { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 11px 22px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--gray4); transition: all 0.15s; border-right: 1px solid var(--gray2); background: none; border-bottom: 2px solid transparent; }
+/* ── CONFIG ── */
+.config-tabs { display: flex; background: var(--white); border-radius: 6px 6px 0 0; overflow: hidden; border: 1px solid var(--gray2); }
+.ctab { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 11px 22px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--gray4); transition: all 0.15s; border-right: 1px solid var(--gray2); background: none; font-weight: 600; }
 .ctab:last-child { border-right: none; }
-.ctab:hover { color: var(--black); background: var(--gray1); }
-.ctab.active { color: var(--red); border-bottom-color: var(--red); background: var(--white); }
+.ctab:hover { color: var(--navy); background: var(--gray1); }
+.ctab.active { color: var(--navy); border-bottom-color: var(--navy); background: var(--white); }
 .cfg-panel { display: none; }
 .cfg-panel.active { display: block; }
-.cfg-card { background: var(--white); border: 1px solid var(--gray2); border-top: none; border-radius: 0 0 5px 5px; padding: 20px; }
-.cfg-desc { font-size: 12px; color: var(--gray4); margin-bottom: 16px; line-height: 1.7; }
+.cfg-card { background: var(--white); border: 1px solid var(--gray2); border-top: none; border-radius: 0 0 6px 6px; padding: 20px; }
+.cfg-desc { font-size: 12px; color: var(--gray4); margin-bottom: 16px; line-height: 1.7; background: var(--gray1); padding: 10px 14px; border-radius: 4px; border-left: 3px solid var(--navy); }
 .map-table { width: 100%; border-collapse: collapse; }
-.map-table th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--gray2); background: var(--gray1); }
+.map-table th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--gray2); background: var(--gray1); font-weight: 700; }
 .map-table td { padding: 4px 6px; border-bottom: 1px solid var(--gray2); }
 .map-table tr:last-child td { border-bottom: none; }
-.map-table input { background: var(--gray1); border: 1px solid transparent; color: var(--black); font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-radius: 3px; width: 100%; transition: all 0.15s; }
-.map-table input:focus { outline: none; border-color: var(--red); background: var(--white); }
-.map-table select { background: var(--gray1); border: 1px solid transparent; color: var(--black); font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-radius: 3px; width: 100%; }
+.map-table input { background: var(--gray1); border: 1.5px solid transparent; color: var(--gray5); font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-radius: 4px; width: 100%; transition: all 0.15s; }
+.map-table input:focus { outline: none; border-color: var(--navy); background: var(--white); }
+.map-table select { background: var(--gray1); border: 1.5px solid transparent; color: var(--gray5); font-family: var(--mono); font-size: 11px; padding: 5px 8px; border-radius: 4px; width: 100%; }
+.map-table select:focus { outline: none; border-color: var(--navy); }
 .del-btn { background: none; border: none; color: var(--gray3); cursor: pointer; font-size: 16px; padding: 3px 7px; border-radius: 3px; transition: all 0.15s; }
-.del-btn:hover { color: var(--red); background: var(--red-dim2); }
-.add-btn { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; background: none; border: 1px dashed var(--gray2); color: var(--gray4); padding: 7px 14px; border-radius: 3px; cursor: pointer; margin-top: 10px; transition: all 0.15s; width: 100%; }
-.add-btn:hover { border-color: var(--red); color: var(--red); }
+.del-btn:hover { color: var(--red); background: var(--red-dim); }
+.add-btn { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; background: none; border: 1.5px dashed var(--gray2); color: var(--gray4); padding: 7px 14px; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: all 0.15s; width: 100%; font-weight: 600; }
+.add-btn:hover { border-color: var(--navy); color: var(--navy); }
+.key-row-indicator { font-family: var(--mono); font-size: 9px; color: var(--navy); background: rgba(30,58,95,0.08); padding: 2px 7px; border-radius: 3px; font-weight: 700; letter-spacing: 0.06em; }
 
-/* FOOTER */
+/* ── LOG ── */
+.log-empty { text-align: center; padding: 60px 20px; color: var(--gray3); }
+.log-empty-icon { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.4; }
+.log-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); margin-bottom: 10px; margin-top: 20px; font-family: var(--mono); padding-bottom: 6px; border-bottom: 1px solid var(--gray2); }
+.log-section-title:first-child { margin-top: 0; }
+.log-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 5px; margin-bottom: 6px; font-size: 12px; line-height: 1.5; }
+.log-item.ok { background: var(--green-dim); border: 1px solid rgba(22,163,74,0.15); }
+.log-item.warn { background: var(--amber-dim); border: 1px solid rgba(217,119,6,0.15); }
+.log-item.error { background: var(--red-dim); border: 1px solid rgba(227,6,19,0.15); }
+.log-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.log-msg { flex: 1; }
+.log-file { font-family: var(--mono); font-size: 10px; font-weight: 600; }
+.log-detail { font-size: 11px; color: var(--gray4); margin-top: 2px; }
+
+/* ── FOOTER ── */
 footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 10px 28px; display: flex; align-items: center; gap: 12px; }
 .footer-txt { font-size: 10px; color: var(--gray3); font-family: var(--mono); letter-spacing: 0.06em; }
-.footer-txt b { color: var(--red); }
-.footer-info { margin-left: auto; background: none; border: 1px solid var(--gray2); color: var(--gray4); font-size: 11px; padding: 4px 12px; border-radius: 3px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; transition: all 0.15s; }
-.footer-info:hover { border-color: var(--red); color: var(--red); }
+.footer-txt b { color: var(--navy); }
+.footer-sync { font-size: 11px; color: var(--gray4); font-family: var(--mono); }
+.footer-info { margin-left: auto; background: none; border: 1px solid var(--gray2); color: var(--gray4); font-size: 11px; padding: 4px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; transition: all 0.15s; font-weight: 600; }
+.footer-info:hover { border-color: var(--navy); color: var(--navy); }
 
-/* MODAL */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; display: none; align-items: center; justify-content: center; }
+/* ── MODALS ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(15,37,64,0.4); z-index: 50; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
 .modal-overlay.open { display: flex; }
-.modal { background: var(--white); border-radius: 6px; width: 560px; max-width: 90vw; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
+.modal { background: var(--white); border-radius: 8px; width: 580px; max-width: 90vw; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(15,37,64,0.2); }
 .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 10px; }
-.modal-title { font-size: 13px; font-weight: 600; flex: 1; }
+.modal-header-icon { font-size: 20px; }
+.modal-title { font-size: 14px; font-weight: 600; color: var(--navy); flex: 1; }
 .modal-close { background: none; border: none; color: var(--gray4); cursor: pointer; font-size: 22px; padding: 0; line-height: 1; }
 .modal-close:hover { color: var(--red); }
 .modal-body { padding: 20px; overflow-y: auto; }
-.modal-section { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray4); margin-bottom: 10px; margin-top: 18px; padding-bottom: 6px; border-bottom: 1px solid var(--gray2); }
+.modal-warn .modal-header { background: var(--amber-dim); border-bottom-color: rgba(217,119,6,0.2); }
+.modal-warn .modal-title { color: var(--amber); }
+.modal-error .modal-header { background: var(--red-dim); border-bottom-color: rgba(227,6,19,0.2); }
+.modal-error .modal-title { color: var(--red); }
+.modal-section { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray4); margin-bottom: 10px; margin-top: 18px; padding-bottom: 6px; border-bottom: 1px solid var(--gray2); font-weight: 700; }
 .modal-section:first-child { margin-top: 0; }
 .col-row { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--gray1); font-size: 12px; }
 .col-row:last-child { border-bottom: none; }
-.col-master { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--black); flex: 1; min-width: 0; }
-.col-arrow { color: var(--gray3); }
-.col-comp { font-family: var(--mono); font-size: 10px; color: var(--gray4); flex: 2; min-width: 0; }
+.col-master { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--navy); flex: 1; }
+.col-arrow { color: var(--gray3); font-size: 14px; }
+.col-comp { font-family: var(--mono); font-size: 10px; color: var(--gray4); flex: 2; }
+.modal-alert-item { display: flex; gap: 10px; padding: 10px 12px; border-radius: 5px; margin-bottom: 8px; font-size: 12px; line-height: 1.5; }
+.modal-alert-item.warn { background: var(--amber-dim); border: 1px solid rgba(217,119,6,0.2); }
+.modal-alert-item.error { background: var(--red-dim); border: 1px solid rgba(227,6,19,0.2); }
+.alert-icon { font-size: 16px; flex-shrink: 0; }
+.alert-body { flex: 1; }
+.alert-file { font-family: var(--mono); font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+.alert-detail { font-size: 11px; color: var(--gray4); }
 
-/* TOAST */
-.toast { position: fixed; bottom: 20px; right: 20px; background: var(--black); color: var(--white); font-family: var(--mono); font-size: 11px; padding: 10px 18px; border-radius: 4px; transform: translateY(60px); opacity: 0; transition: all 0.25s; z-index: 200; border-left: 3px solid var(--gray5); pointer-events: none; }
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: var(--white); font-family: var(--mono); font-size: 11px; padding: 10px 18px; border-radius: 5px; transform: translateY(60px); opacity: 0; transition: all 0.25s; z-index: 200; border-left: 3px solid rgba(255,255,255,0.2); pointer-events: none; }
 .toast.show { transform: translateY(0); opacity: 1; }
-.toast.success { border-left-color: #16a34a; }
+.toast.success { border-left-color: var(--green); }
 .toast.error { border-left-color: var(--red); }
 </style>
 </head>
@@ -180,8 +218,9 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sb-logo">
-    <div class="sb-logo-name">KATOEN <b>NATIE</b></div>
-    <div class="sb-logo-sub">Discrepancy Checker</div>
+    <div class="sb-logo-ktn">Katoen Natie</div>
+    <div class="sb-logo-name">Discrepancy<span>.</span>Check</div>
+    <div class="sb-logo-ver">v2.1 · 2026</div>
   </div>
   <nav class="sb-nav">
     <div class="nav-item active" data-sec="archivos" onclick="showSec('archivos',this)">
@@ -189,6 +228,10 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
     </div>
     <div class="nav-item" data-sec="resumen" onclick="showSec('resumen',this)">
       <span class="nav-icon">📊</span> Resumen
+    </div>
+    <div class="nav-item" data-sec="log" onclick="showSec('log',this)">
+      <span class="nav-icon">🗒️</span> Log
+      <span class="nav-badge" id="logBadge" style="display:none">0</span>
     </div>
     <div class="nav-item" data-sec="config" onclick="showSec('config',this)">
       <span class="nav-icon">⚙️</span> Configuración
@@ -205,9 +248,9 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
   <div class="topbar">
     <div class="topbar-title" id="topTitle">Archivos</div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost danger" onclick="resetAll()">✕ Reset</button>
-      <button class="btn btn-ghost" id="saveConfigBtn" onclick="saveConfig()" style="display:none">↑ Guardar config</button>
-      <button class="btn btn-ghost" id="exportBtn" onclick="exportExcel()">↓ Exportar Excel</button>
+      <button class="btn btn-outline danger" onclick="resetAll()">✕ Reset</button>
+      <button class="btn btn-outline save visible" id="saveConfigBtn" onclick="saveConfig()" style="display:none">↑ Guardar config</button>
+      <button class="btn btn-outline visible" id="exportBtn" onclick="exportExcel()" style="display:none">↓ Exportar Excel</button>
       <button class="btn btn-primary" id="runBtn" onclick="runComparison()" disabled>Comparar →</button>
     </div>
   </div>
@@ -235,9 +278,9 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
         </div>
       </div>
       <div class="info-box">
-        <strong style="color:var(--black)">ℹ️ Cómo funciona:</strong>
-        Cargá el Master y uno o varios archivos de comparación. Si cargás varios, se combinan en una sola lista antes de comparar.
-        El vessel se detecta desde <code>O/B Actual Visit</code> del master.
+        <strong style="color:var(--navy)">ℹ️ Cómo funciona:</strong>
+        Cargá el Master y uno o varios archivos de comparación. Si cargás varios, se combinan en una sola lista.
+        El vessel se detecta desde <code>O/B Actual Visit</code>. Si hay errores al cargar, revisá la sección <strong>Log</strong>.
       </div>
     </div>
 
@@ -246,7 +289,17 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
       <div id="resultsArea">
         <div class="empty-state">
           <span class="empty-icon">📊</span>
-          Aún no hay resultados.<br>Cargá los archivos y presioná <strong>Comparar</strong>.
+          <div class="empty-text">Aún no hay resultados.<br>Cargá los archivos y presioná <strong>Comparar</strong>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="section" id="sec-log">
+      <div id="logArea">
+        <div class="log-empty">
+          <span class="log-empty-icon">🗒️</span>
+          <div style="font-size:13px;color:var(--gray4)">El log aparece después de comparar.</div>
         </div>
       </div>
     </div>
@@ -259,36 +312,32 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
         <button class="ctab" onclick="showCfgTab('lineas',this)">Líneas</button>
         <button class="ctab" onclick="showCfgTab('puertos',this)">Puertos</button>
       </div>
-
       <div class="cfg-panel active" id="cfg-master">
         <div class="cfg-card">
-          <p class="cfg-desc">Columnas del archivo <strong>Master</strong>. Nombres exactos tal como vienen del sistema. El tipo <em>key</em> identifica el container, <em>vessel</em> es el nombre del buque, <em>meta</em> es info auxiliar (no se compara), <em>compare</em> son las columnas que se comparan contra el archivo de comparación.</p>
-          <table class="map-table"><thead><tr><th>Columna en Master</th><th style="width:120px">Tipo</th><th style="width:40px"></th></tr></thead>
+          <div class="cfg-desc">Columnas del archivo <strong>Master</strong>. Nombres exactos tal como vienen del sistema. Tipos: <strong>key</strong> = identificador del container, <strong>compare</strong> = se compara contra el archivo de comparación, <strong>vessel</strong> = nombre del buque, <strong>meta</strong> = info auxiliar.</div>
+          <table class="map-table"><thead><tr><th>Columna en Master</th><th style="width:130px">Tipo</th><th style="width:40px"></th></tr></thead>
           <tbody id="masterColBody"></tbody></table>
           <button class="add-btn" onclick="addMasterCol()">+ Agregar columna</button>
         </div>
       </div>
-
       <div class="cfg-panel" id="cfg-comparison">
         <div class="cfg-card">
-          <p class="cfg-desc">Para cada columna del Master indicá los posibles nombres en el archivo de Comparison, <strong>separados por coma</strong>. Se usa el primero que se encuentre.</p>
-          <table class="map-table"><thead><tr><th>Campo Master</th><th>Nombres posibles en Comparison</th></tr></thead>
+          <div class="cfg-desc">Para cada columna del Master (incluyendo la clave), indicá los posibles nombres en el archivo de Comparison, <strong>separados por coma</strong>. Se usa el primero que se encuentre.</div>
+          <table class="map-table"><thead><tr><th>Campo Master</th><th style="width:80px">Tipo</th><th>Nombres posibles en Comparison</th></tr></thead>
           <tbody id="compMapBody"></tbody></table>
         </div>
       </div>
-
       <div class="cfg-panel" id="cfg-lineas">
         <div class="cfg-card">
-          <p class="cfg-desc">Mapeo de líneas navieras. Izquierda: como viene en Comparison. Derecha: como aparece en Master.</p>
+          <div class="cfg-desc">Mapeo de líneas navieras. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Master.</div>
           <table class="map-table"><thead><tr><th>Comparison</th><th>Master</th><th style="width:40px"></th></tr></thead>
           <tbody id="lineMapBody"></tbody></table>
           <button class="add-btn" onclick="addLineRow()">+ Agregar</button>
         </div>
       </div>
-
       <div class="cfg-panel" id="cfg-puertos">
         <div class="cfg-card">
-          <p class="cfg-desc">Mapeo de códigos de puertos. Izquierda: como viene en Comparison. Derecha: como aparece en Master.</p>
+          <div class="cfg-desc">Mapeo de códigos de puertos. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Master.</div>
           <table class="map-table"><thead><tr><th>Comparison</th><th>Master</th><th style="width:40px"></th></tr></thead>
           <tbody id="portMapBody"></tbody></table>
           <button class="add-btn" onclick="addPortRow()">+ Agregar</button>
@@ -299,27 +348,53 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
   </div><!-- /content -->
 
   <footer>
-    <span class="footer-txt" id="syncStatus">KTN <b>·</b> Discrepancy Checker <b>·</b> v2.0</span>
-    <button class="footer-info" onclick="openModal()">ⓘ Columnas</button>
+    <span class="footer-txt">KTN <b>·</b> Discrepancy Checker <b>·</b> v2.1</span>
+    <span class="footer-sync" id="syncStatus"></span>
+    <button class="footer-info" onclick="openInfoModal()">ⓘ Columnas</button>
   </footer>
 </div><!-- /main -->
 </div><!-- /app -->
 
-<!-- MODAL -->
-<div class="modal-overlay" id="infoModal" onclick="if(event.target===this)closeModal()">
+<!-- INFO MODAL -->
+<div class="modal-overlay" id="infoModal" onclick="if(event.target===this)closeInfoModal()">
   <div class="modal">
     <div class="modal-header">
+      <span class="modal-header-icon">📋</span>
       <div class="modal-title">Columnas configuradas</div>
-      <button class="modal-close" onclick="closeModal()">×</button>
+      <button class="modal-close" onclick="closeInfoModal()">×</button>
     </div>
-    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-body" id="infoModalBody"></div>
+  </div>
+</div>
+
+<!-- WARNING MODAL -->
+<div class="modal-overlay" id="warnModal" onclick="if(event.target===this)closeWarnModal()">
+  <div class="modal modal-warn">
+    <div class="modal-header">
+      <span class="modal-header-icon">⚠️</span>
+      <div class="modal-title">Advertencias al procesar</div>
+      <button class="modal-close" onclick="closeWarnModal()">×</button>
+    </div>
+    <div class="modal-body" id="warnModalBody"></div>
+  </div>
+</div>
+
+<!-- ERROR MODAL -->
+<div class="modal-overlay" id="errorModal" onclick="if(event.target===this)closeErrorModal()">
+  <div class="modal modal-error">
+    <div class="modal-header">
+      <span class="modal-header-icon">🚨</span>
+      <div class="modal-title">Error Fatal</div>
+      <button class="modal-close" onclick="closeErrorModal()">×</button>
+    </div>
+    <div class="modal-body" id="errorModalBody"></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CONFIG ─────────────────────────────────────────────────────────────
+// ── CONFIG ─────────────────────────────────────────────────
 let masterCols = [
   { name: 'Unit Nbr',           type: 'key' },
   { name: 'Line Op',            type: 'compare' },
@@ -334,46 +409,85 @@ let masterCols = [
   { name: 'O/B Actual Visit',   type: 'vessel' },
   { name: 'Category',           type: 'meta' },
 ];
-
 let compMap = {
-  'Unit Nbr':           'Container, Cntr, Unit, Box No, Container No',
+  'Unit Nbr':           'Container, Cntr, Unit, Box No, Container No, Mark/Number',
   'Line Op':            'Operator, Carrier, Line, Shipping Line',
   'Booking Number':     'Bookno, Booking, BK No, Booking Number',
-  'Type Length':        'Size, Length, Type Length',
+  'Type Length':        'Size, Length, Type Length, Teu',
   'POD':                'Next Discharge, Discharge Port, POD, Dest',
   'Frght Kind':         'F/E, Full Empty, Load Status',
-  'Temp Required (C)':  'Temp_C, Temperature, Temp, Temp Required',
+  'Temp Required (C)':  'Temp_C, Temperature, Temp, Temp Required, Temp. ºC, Temp °C',
   'Humd Req.%':         'Humidity, Humd, Humidity %',
   'Vent Req':           'Ventilation, Vent, Vent Req',
-  'IMDG':               'IMOCLS, IMO Class, IMDG',
+  'IMDG':               'IMOCLS, IMO Class, IMDG, IMO/UN',
 };
-
 let lineMap = {
   'MSK':'MAERS','MAERSK':'MAERS','MAERS':'MAERS',
-  'CMA':'CMA','CMACGM':'CMA','CMACGM':'CMA',
+  'CMA':'CMA','CMACGM':'CMA',
   'HAPAG':'HAPAG','HAPAGLLOYD':'HAPAG',
-  'ONE':'ONE','EVERGREEN':'EVERGREEN','COSCO':'COSCO',
-  'MSC':'MSC',
+  'ONE':'ONE','EVERGREEN':'EVERGREEN',
+  'COSCO':'COSCO','MSC':'MSC','COS':'COS',
 };
-
 let portMap = {
   'BRSSZBT':'BRSSZ','MAPTMTM':'MAPTM','ARBUEAR':'ARBUE',
   'DEHAMEK':'DEHAM','DEBRVTM':'DEBRV','BEANT913':'BEANR',
 };
 
-// ── STATE ──────────────────────────────────────────────────────────────
+// ── STATE ──────────────────────────────────────────────────
 let masterFile = null, compFiles = [], lastResult = null;
+let logEntries = [];
 
-// ── NAV ────────────────────────────────────────────────────────────────
-const secTitles = { archivos:'Archivos', resumen:'Resumen', config:'Configuración' };
+// ── LOG HELPERS ────────────────────────────────────────────
+function addLog(type, file, message, detail = '') {
+  logEntries.push({ type, file, message, detail, time: new Date().toLocaleTimeString() });
+  updateLogBadge();
+}
+function updateLogBadge() {
+  const warns = logEntries.filter(e => e.type === 'warn' || e.type === 'error').length;
+  const badge = document.getElementById('logBadge');
+  if (warns > 0) {
+    badge.textContent = warns;
+    badge.style.display = 'inline-block';
+    badge.className = 'nav-badge' + (logEntries.some(e => e.type === 'error') ? '' : ' warn');
+  } else {
+    badge.style.display = 'none';
+  }
+}
+function renderLog() {
+  const area = document.getElementById('logArea');
+  if (!logEntries.length) {
+    area.innerHTML = `<div class="log-empty"><span class="log-empty-icon">🗒️</span><div style="font-size:13px;color:var(--gray4)">El log aparece después de comparar.</div></div>`;
+    return;
+  }
+  const ok = logEntries.filter(e => e.type === 'ok');
+  const warn = logEntries.filter(e => e.type === 'warn');
+  const err = logEntries.filter(e => e.type === 'error');
+  let html = '';
+  if (err.length) {
+    html += `<div class="log-section-title">🚨 Errores fatales (${err.length})</div>`;
+    err.forEach(e => html += `<div class="log-item error"><span class="log-icon">🚨</span><div class="log-msg"><div class="log-file">${e.file}</div><div>${e.message}</div>${e.detail?`<div class="log-detail">${e.detail}</div>`:''}</div><span style="color:var(--gray3);font-size:10px;font-family:var(--mono)">${e.time}</span></div>`);
+  }
+  if (warn.length) {
+    html += `<div class="log-section-title">⚠️ Advertencias (${warn.length})</div>`;
+    warn.forEach(e => html += `<div class="log-item warn"><span class="log-icon">⚠️</span><div class="log-msg"><div class="log-file">${e.file}</div><div>${e.message}</div>${e.detail?`<div class="log-detail">${e.detail}</div>`:''}</div><span style="color:var(--gray3);font-size:10px;font-family:var(--mono)">${e.time}</span></div>`);
+  }
+  if (ok.length) {
+    html += `<div class="log-section-title">✓ Procesado correctamente (${ok.length})</div>`;
+    ok.forEach(e => html += `<div class="log-item ok"><span class="log-icon">✓</span><div class="log-msg"><div class="log-file">${e.file}</div><div>${e.message}</div>${e.detail?`<div class="log-detail">${e.detail}</div>`:''}</div><span style="color:var(--gray3);font-size:10px;font-family:var(--mono)">${e.time}</span></div>`);
+  }
+  area.innerHTML = html;
+}
+
+// ── NAV ────────────────────────────────────────────────────
+const secTitles = { archivos:'Archivos', resumen:'Resumen', log:'Log', config:'Configuración' };
 function showSec(name, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('sec-' + name).classList.add('active');
   el.classList.add('active');
   document.getElementById('topTitle').textContent = secTitles[name] || name;
-  const saveBtn = document.getElementById('saveConfigBtn');
-  saveBtn.style.display = name === 'config' ? 'inline-flex' : 'none';
+  document.getElementById('saveConfigBtn').style.display = name === 'config' ? 'inline-flex' : 'none';
+  if (name === 'log') renderLog();
 }
 function showCfgTab(name, el) {
   document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
@@ -382,7 +496,7 @@ function showCfgTab(name, el) {
   el.classList.add('active');
 }
 
-// ── FILES ──────────────────────────────────────────────────────────────
+// ── FILES ──────────────────────────────────────────────────
 function setupDrop(zoneId, inputId, isMaster) {
   const zone = document.getElementById(zoneId), input = document.getElementById(inputId);
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
@@ -404,71 +518,88 @@ function handleFiles(files, isMaster) {
 }
 function renderTags() {
   document.getElementById('masterTags').innerHTML = masterFile
-    ? `<span class="file-tag ft-master">📋 ${masterFile.name} <button class="ft-rm" onclick="removeMaster(event)">×</button></span>` : '';
+    ? `<span class="file-tag ft-m">📋 ${masterFile.name} <button class="ft-rm" onclick="removeMaster(event)">×</button></span>` : '';
   document.getElementById('compTags').innerHTML = compFiles.map((f,i) =>
-    `<span class="file-tag ft-comp">🔍 ${f.name} <button class="ft-rm" onclick="removeComp(event,${i})">×</button></span>`).join('');
+    `<span class="file-tag ft-c">🔍 ${f.name} <button class="ft-rm" onclick="removeComp(event,${i})">×</button></span>`).join('');
 }
 function removeMaster(e) { e.preventDefault(); e.stopPropagation(); masterFile=null; document.getElementById('masterZone').classList.remove('loaded'); renderTags(); checkReady(); }
 function removeComp(e,i) { e.preventDefault(); e.stopPropagation(); compFiles.splice(i,1); if(!compFiles.length) document.getElementById('compZone').classList.remove('loaded-b'); renderTags(); checkReady(); }
 function checkReady() { document.getElementById('runBtn').disabled = !(masterFile && compFiles.length); }
 
-// ── PARSE ──────────────────────────────────────────────────────────────
-function parseXLSX(file) {
+// ── PARSE ──────────────────────────────────────────────────
+function getCompPossibleNames() {
+  const names = [];
+  Object.values(compMap).forEach(v => v.split(',').forEach(s => { const t=s.trim(); if(t) names.push(t); }));
+  return [...new Set(names)];
+}
+
+async function parseXLSX(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
-        const ANCHORS = ['Unit Nbr', 'Container', ...getCompPossibleNames()];
-        let data = [];
+        const ANCHORS = ['Unit Nbr', ...getCompPossibleNames()];
+        let data = [], foundSheet = null, foundHeaderRow = -1;
+
         for (const name of wb.SheetNames) {
           const ws = wb.Sheets[name];
           const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-          let hIdx = -1;
           for (let i = 0; i < Math.min(raw.length, 15); i++) {
-            if (ANCHORS.some(k => raw[i].map(c => String(c).trim()).includes(k))) { hIdx = i; break; }
-          }
-          if (hIdx >= 0) {
-            const headers = raw[hIdx].map(c => String(c).trim());
-            data = [];
-            for (let i = hIdx+1; i < raw.length; i++) {
-              if (raw[i].every(c => c===''||c===null||c===undefined)) continue;
-              const obj = {}; headers.forEach((h,j) => { if(h) obj[h] = raw[i][j] ?? ''; }); data.push(obj);
+            const cells = raw[i].map(c => String(c).trim());
+            if (ANCHORS.some(k => cells.includes(k))) {
+              foundSheet = name; foundHeaderRow = i;
+              const headers = cells;
+              data = [];
+              for (let j = i+1; j < raw.length; j++) {
+                if (raw[j].every(c => c===''||c===null||c===undefined)) continue;
+                const obj = {}; headers.forEach((h,k) => { if(h) obj[h] = raw[j][k] ?? ''; }); data.push(obj);
+              }
+              break;
             }
-            break;
           }
+          if (foundSheet) break;
         }
-        if (!data.length) data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
-        resolve(data);
+
+        if (!data.length && !foundSheet) {
+          // Fallback
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          data = XLSX.utils.sheet_to_json(ws, { defval:'' });
+          if (!data.length) throw new Error('No se encontraron datos en el archivo');
+        }
+
+        resolve({ data, sheet: foundSheet || wb.SheetNames[0], headerRow: foundHeaderRow });
       } catch(err) { reject(err); }
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('Error de lectura del archivo'));
     reader.readAsArrayBuffer(file);
   });
 }
-function getCompPossibleNames() {
-  const names = [];
-  Object.values(compMap).forEach(v => v.split(',').forEach(s => names.push(s.trim())));
-  return names;
-}
 
-// ── NORMALIZE ──────────────────────────────────────────────────────────
+// ── NORMALIZE ──────────────────────────────────────────────
 const clean = v => (v ?? '').toString().trim();
 const cleanKey = v => clean(v).replace(/\s+/g,'').toUpperCase();
 
 function resolveCompVal(row, masterColName) {
-  const possibles = (compMap[masterColName] || masterColName).split(',').map(s => s.trim());
-  for (const p of possibles) { if (row[p] !== undefined) return row[p]; }
+  const possibles = (compMap[masterColName] || masterColName).split(',').map(s => s.trim()).filter(Boolean);
+  for (const p of possibles) { if (row[p] !== undefined && row[p] !== '') return String(row[p]); }
   return '';
 }
 function resolveCompKey(row) {
   const col = masterCols.find(c => c.type === 'key');
-  return col ? cleanKey(resolveCompVal(row, col.name)) : '';
+  if (!col) return '';
+  return cleanKey(resolveCompVal(row, col.name));
 }
-function normalizeOp(v) { const c = cleanKey(v); return lineMap[c] || clean(v).toUpperCase(); }
-function normalizePort(v) { const c = cleanKey(v); return portMap[c] || clean(v).toUpperCase().replace(/\s+/g,''); }
-function normalizeSize(v) { const m = clean(v).match(/\d+/); return m ? m[0] : ''; }
-function normalizeTemp(v) { const s = clean(v).replace(',','.'); if(!s||s==='-') return ''; const n=Number(s); return Number.isFinite(n)?n.toFixed(1):s; }
+function normalizeOp(v) { const c=cleanKey(v); return lineMap[c] || clean(v).toUpperCase(); }
+function normalizePort(v) { const c=cleanKey(v); return portMap[c] || clean(v).toUpperCase().replace(/\s+/g,''); }
+function normalizeSize(v) { const m=clean(v).match(/\d+/); return m?m[0]:''; }
+function normalizeTemp(v) {
+  let s = clean(v).replace(',','.').replace(/\s+/g,'');
+  if (!s || s === '-' || s === '--') return '';
+  // Handle cases like "25" that should be "-25"
+  const n = Number(s);
+  return Number.isFinite(n) ? n.toFixed(1) : s;
+}
 function normalizeFE(v) { const lv=clean(v).toLowerCase(); if(['full','fcl','f'].includes(lv)) return 'FCL'; if(['empty','e','mt','mty'].includes(lv)) return 'Empty'; return clean(v); }
 
 function normComp(col, val) {
@@ -487,27 +618,113 @@ function normMaster(col, val) {
   return clean(val);
 }
 
-// ── COMPARE ────────────────────────────────────────────────────────────
+// ── COMPARE ────────────────────────────────────────────────
 async function runComparison() {
   const btn = document.getElementById('runBtn');
   btn.disabled = true; btn.textContent = 'Procesando...';
+  logEntries = []; updateLogBadge();
+  const warnings = [], errors = [];
+
   try {
-    const masterData = await parseXLSX(masterFile);
-    const compArrays = await Promise.all(compFiles.map(f => parseXLSX(f)));
+    // Parse master
+    let masterData = [], masterParseInfo = null;
+    try {
+      const result = await parseXLSX(masterFile);
+      masterData = result.data; masterParseInfo = result;
+      // Validate key column exists
+      const keyCol = masterCols.find(c => c.type === 'key');
+      const hasKey = masterData.length && masterData[0][keyCol?.name] !== undefined;
+      if (!hasKey) {
+        warnings.push({ file: masterFile.name, msg: `Columna clave "${keyCol?.name}" no encontrada`, detail: `Headers encontrados: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}` });
+        addLog('warn', masterFile.name, `Columna clave "${keyCol?.name}" no encontrada`, `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}`);
+      } else {
+        addLog('ok', masterFile.name, `${masterData.length} containers parseados`, `Hoja: ${masterParseInfo.sheet} · Fila de headers: ${masterParseInfo.headerRow + 1}`);
+      }
+    } catch(err) {
+      errors.push({ file: masterFile.name, msg: 'No se pudo leer el archivo', detail: err.message });
+      addLog('error', masterFile.name, 'Error fatal al leer el archivo', err.message);
+    }
+
+    // Parse comparison files
+    const compDataArrays = [];
+    for (const f of compFiles) {
+      try {
+        const result = await parseXLSX(f);
+        compDataArrays.push(result.data);
+        // Check if key column found
+        const keyCol = masterCols.find(c => c.type === 'key');
+        const possibles = (compMap[keyCol?.name] || '').split(',').map(s=>s.trim());
+        const foundKey = result.data.length && possibles.some(p => result.data[0][p] !== undefined);
+        if (!foundKey && result.data.length) {
+          warnings.push({ file: f.name, msg: `Columna clave no encontrada`, detail: `Buscado: ${possibles.join(', ')} · Headers: ${Object.keys(result.data[0]).slice(0,8).join(', ')}` });
+          addLog('warn', f.name, 'Columna clave no encontrada en el archivo', `Buscado: ${possibles.join(', ')} · Headers encontrados: ${Object.keys(result.data[0]).slice(0,8).join(', ')}`);
+        } else {
+          // Check which compare columns were found / not found
+          const compareCols = masterCols.filter(c => c.type === 'compare');
+          const missing = [];
+          compareCols.forEach(col => {
+            const poss = (compMap[col.name]||col.name).split(',').map(s=>s.trim());
+            const found = result.data.length && poss.some(p => result.data[0][p] !== undefined);
+            if (!found) missing.push(col.name);
+          });
+          if (missing.length) {
+            warnings.push({ file: f.name, msg: `Columnas no encontradas: ${missing.join(', ')}`, detail: 'Estas columnas se ignorarán en la comparación. Revisá el mapeo en Configuración → Comparison.' });
+            addLog('warn', f.name, `Columnas no encontradas y se ignorarán: ${missing.join(', ')}`, 'Revisá Configuración → Comparison para agregar los nombres alternativos.');
+          }
+          addLog('ok', f.name, `${result.data.length} containers parseados`, `Hoja: ${result.sheet} · Fila de headers: ${result.headerRow + 1}`);
+        }
+      } catch(err) {
+        errors.push({ file: f.name, msg: 'No se pudo leer el archivo', detail: err.message });
+        addLog('error', f.name, 'Error fatal al leer el archivo', err.message);
+        compDataArrays.push([]);
+      }
+    }
+
+    // Show error modal if fatal errors
+    if (errors.length) {
+      let html = '';
+      errors.forEach(e => {
+        html += `<div class="modal-alert-item error"><span class="alert-icon">🚨</span><div class="alert-body"><div class="alert-file">${e.file}</div><div>${e.msg}</div><div class="alert-detail">${e.detail}</div></div></div>`;
+      });
+      document.getElementById('errorModalBody').innerHTML = html;
+      document.getElementById('errorModal').classList.add('open');
+      btn.disabled = false; btn.textContent = 'Comparar →'; checkReady();
+      return;
+    }
+
+    // Show warning modal if warnings
+    if (warnings.length) {
+      let html = `<p style="font-size:12px;color:var(--gray4);margin-bottom:16px">La comparación continuó pero hay datos que conviene revisar:</p>`;
+      warnings.forEach(w => {
+        html += `<div class="modal-alert-item warn"><span class="alert-icon">⚠️</span><div class="alert-body"><div class="alert-file">${w.file}</div><div>${w.msg}</div><div class="alert-detail">${w.detail}</div></div></div>`;
+      });
+      document.getElementById('warnModalBody').innerHTML = html;
+      document.getElementById('warnModal').classList.add('open');
+    }
+
+    // Merge comparison files
     const merged = []; const seen = {};
-    for (const arr of compArrays) {
+    for (const arr of compDataArrays) {
       for (const row of arr) {
         const cntr = resolveCompKey(row); if (!cntr) continue;
         if (seen[cntr] === undefined) { merged.push(row); seen[cntr] = merged.length-1; }
         else merged[seen[cntr]] = row;
       }
     }
+
     lastResult = doCompare(masterData, merged);
+    addLog('ok', 'Comparación', `${lastResult.discrepancies.length} discrepancias encontradas`, `Master: ${lastResult.masterTotal} containers · Comparison: ${lastResult.compTotal} containers`);
     renderResults(lastResult);
-    document.getElementById('exportBtn').classList.add('visible');
+    document.getElementById('exportBtn').style.display = 'inline-flex';
     showSec('resumen', document.querySelector('[data-sec="resumen"]'));
-    toast('Comparación completada ✓', 'success');
-  } catch(err) { toast('Error: ' + err.message, 'error'); console.error(err); }
+    if (!warnings.length) toast('Comparación completada ✓', 'success');
+
+  } catch(err) {
+    addLog('error', 'Sistema', 'Error inesperado', err.message);
+    toast('Error: ' + err.message, 'error');
+    console.error(err);
+  }
+
   btn.disabled = false; btn.textContent = 'Comparar →'; checkReady();
 }
 
@@ -519,7 +736,7 @@ function doCompare(masterData, compData) {
   const disc = [], dups = [];
 
   for (const row of masterData) {
-    const cntr = cleanKey(row[keyCol?.name] || ''); if (!cntr) continue;
+    const cntr = cleanKey(row[keyCol?.name]||''); if (!cntr) continue;
     if (mLookup[cntr]) dups.push({ container:cntr, type:'duplicate_in_master', field:'-', masterValue:'-', compValue:'-' });
     mLookup[cntr] = row;
   }
@@ -530,10 +747,10 @@ function doCompare(masterData, compData) {
   }
 
   let vesselName = 'Unknown';
-  for (const row of masterData) { const v = clean(row[vesselCol?.name]||''); if(v){vesselName=v;break;} }
+  for (const row of masterData) { const v=clean(row[vesselCol?.name]||''); if(v){vesselName=v;break;} }
 
   for (const cntr of Object.keys(cLookup)) {
-    const cr = cLookup[cntr], mr = mLookup[cntr];
+    const cr=cLookup[cntr], mr=mLookup[cntr];
     if (!mr) { disc.push({ container:cntr, type:'missing_in_master', field:'-', masterValue:'-', compValue:'-' }); continue; }
     for (const col of compareCols) {
       const mf = col.name;
@@ -551,11 +768,10 @@ function doCompare(masterData, compData) {
   return { vesselName, masterTotal:Object.keys(mLookup).length, compTotal:Object.keys(cLookup).length, discrepancies:[...dups,...disc] };
 }
 
-// ── RENDER ─────────────────────────────────────────────────────────────
+// ── RENDER RESULTS ─────────────────────────────────────────
 function renderResults(r) {
   const sv = document.getElementById('sbVessel');
   sv.textContent = r.vesselName; sv.classList.remove('empty');
-
   const d = r.discrepancies;
   const mm = d.filter(x=>x.type==='value_mismatch').length;
   const misM = d.filter(x=>x.type==='missing_in_master').length;
@@ -564,8 +780,8 @@ function renderResults(r) {
 
   document.getElementById('resultsArea').innerHTML = `
     <div class="summary-grid">
-      <div class="stat-card black"><div class="stat-label">Master</div><div class="stat-value">${r.masterTotal}</div><div class="stat-sub">containers</div></div>
-      <div class="stat-card black"><div class="stat-label">Comparison</div><div class="stat-value">${r.compTotal}</div><div class="stat-sub">containers</div></div>
+      <div class="stat-card navy"><div class="stat-label">Master</div><div class="stat-value">${r.masterTotal}</div><div class="stat-sub">containers</div></div>
+      <div class="stat-card navy"><div class="stat-label">Comparison</div><div class="stat-value">${r.compTotal}</div><div class="stat-sub">containers</div></div>
       <div class="stat-card red"><div class="stat-label">Discrepancias</div><div class="stat-value red">${d.length}</div><div class="stat-sub">total</div></div>
       <div class="stat-card amber"><div class="stat-label">Mismatch</div><div class="stat-value amber">${mm}</div><div class="stat-sub">valores distintos</div></div>
       <div class="stat-card red"><div class="stat-label">Missing Master</div><div class="stat-value red">${misM}</div><div class="stat-sub">solo en comp.</div></div>
@@ -579,39 +795,33 @@ function renderResults(r) {
         ${misC?`<button class="filter-btn fb" onclick="applyFilter('missing_in_comparison',this)">Missing Comp. (${misC})</button>`:''}
         ${dups?`<button class="filter-btn" onclick="applyFilter('duplicate',this)">Duplicados (${dups})</button>`:''}
       </div>
-      <div class="table-wrap" id="tableWrap">${buildTable(d, null)}</div>
+      <div class="table-wrap" id="tableWrap">${buildTable(d,null)}</div>
     </div>`;
 }
 
 function applyFilter(type, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tableWrap').innerHTML = buildTable(lastResult.discrepancies, type==='all'?null:type);
 }
 
 function buildTable(disc, filter) {
-  const rows = filter ? disc.filter(d => d.type===filter || d.type.startsWith(filter)) : disc;
+  const rows = filter ? disc.filter(d=>d.type===filter||d.type.startsWith(filter)) : disc;
   if (!rows.length) return `<div class="no-disc"><span class="no-disc-icon">✓</span><div class="no-disc-text">Sin discrepancias en esta categoría</div></div>`;
-
   const TL = { value_mismatch:'Mismatch', missing_in_master:'Missing Master', missing_in_comparison:'Missing Comp.', duplicate_in_master:'Dup. Master', duplicate_in_comparison:'Dup. Comp.' };
   const TC = { value_mismatch:'bm', missing_in_master:'bmm', missing_in_comparison:'bmc', duplicate_in_master:'bd', duplicate_in_comparison:'bd' };
   const GL = { value_mismatch:'gl-a', missing_in_master:'gl-r', missing_in_comparison:'gl-b', duplicate_in_master:'gl-p', duplicate_in_comparison:'gl-p' };
-
   const grouped = {};
   rows.forEach(d => { if(!grouped[d.container]) grouped[d.container]=[]; grouped[d.container].push(d); });
-
   let n = 0;
   return `<table>
     <thead><tr><th>#</th><th>Container</th><th>Tipo</th><th>Campo</th><th>Master</th><th>Comparison</th></tr></thead>
     <tbody>${rows.map(d => {
       n++;
-      const grp = grouped[d.container];
-      const isFirst = grp[0]===d, isMulti = grp.length>1;
-      const lc = isMulti ? GL[d.type]||'' : '';
-      const pl = isMulti ? 'pl-e' : '';
-      return `<tr class="${lc} ${pl}">
+      const grp=grouped[d.container], isFirst=grp[0]===d, isMulti=grp.length>1;
+      return `<tr class="${isMulti?GL[d.type]||'':''} ${isMulti?'pl-e':''}">
         <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
-        <td class="cntr-cell">${isFirst||!isMulti ? d.container : `<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
+        <td class="cntr-cell">${isFirst||!isMulti?d.container:`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
         <td><span class="type-badge ${TC[d.type]||''}">${TL[d.type]||d.type}</span></td>
         <td style="color:var(--gray4);font-size:12px">${d.field!=='-'?d.field:''}</td>
         <td>${d.masterValue!=='-'?`<span class="val-m">${d.masterValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
@@ -620,36 +830,45 @@ function buildTable(disc, filter) {
     }).join('')}</tbody></table>`;
 }
 
-// ── CONFIG UI ──────────────────────────────────────────────────────────
+// ── CONFIG UI ──────────────────────────────────────────────
 function renderMasterCols() {
-  const tbody = document.getElementById('masterColBody');
-  tbody.innerHTML = '';
+  const tbody = document.getElementById('masterColBody'); tbody.innerHTML = '';
   masterCols.forEach((col, i) => {
     const tr = document.createElement('tr');
-    const protected_ = col.type === 'key' || col.type === 'vessel';
+    const locked = col.type === 'key' || col.type === 'vessel';
     tr.innerHTML = `
       <td><input value="${col.name}" onchange="masterCols[${i}].name=this.value;syncCompMap()" /></td>
-      <td><select onchange="masterCols[${i}].type=this.value">
+      <td><select onchange="masterCols[${i}].type=this.value;syncCompMap()">
         ${['key','compare','vessel','meta'].map(t=>`<option value="${t}"${col.type===t?' selected':''}>${t}</option>`).join('')}
       </select></td>
-      <td>${!protected_?`<button class="del-btn" onclick="delMasterCol(${i})">×</button>`:''}</td>`;
+      <td>${!locked?`<button class="del-btn" onclick="delMasterCol(${i})">×</button>`:''}</td>`;
     tbody.appendChild(tr);
   });
 }
+
 function syncCompMap() {
-  masterCols.filter(c=>c.type==='compare').forEach(col => { if(!compMap[col.name]) compMap[col.name]=col.name; });
+  // Add new compare cols to compMap if missing
+  masterCols.filter(c=>c.type==='compare'||c.type==='key').forEach(col => {
+    if (!compMap[col.name]) compMap[col.name] = col.name;
+  });
   renderCompMap();
 }
+
 function renderCompMap() {
   const tbody = document.getElementById('compMapBody'); tbody.innerHTML = '';
-  masterCols.filter(c=>c.type==='compare').forEach(col => {
+  // Show ALL mappable cols: key + compare
+  const mappableCols = masterCols.filter(c => c.type === 'key' || c.type === 'compare');
+  mappableCols.forEach(col => {
     const tr = document.createElement('tr');
+    const typeLabel = col.type === 'key' ? '<span class="key-row-indicator">KEY</span>' : '<span style="font-size:10px;color:var(--gray4);font-family:var(--mono)">compare</span>';
     tr.innerHTML = `
-      <td style="font-family:var(--mono);font-size:11px;font-weight:600;padding:7px 10px;white-space:nowrap;color:var(--black)">${col.name}</td>
+      <td style="font-family:var(--mono);font-size:11px;font-weight:600;padding:7px 10px;white-space:nowrap;color:var(--navy)">${col.name}</td>
+      <td style="padding:7px 6px">${typeLabel}</td>
       <td><input value="${compMap[col.name]||col.name}" onchange="compMap['${col.name}']=this.value" style="width:100%" /></td>`;
     tbody.appendChild(tr);
   });
 }
+
 function addMasterCol() { masterCols.push({ name:'Nueva columna', type:'compare' }); renderMasterCols(); syncCompMap(); }
 function delMasterCol(i) { const n=masterCols[i].name; masterCols.splice(i,1); delete compMap[n]; renderMasterCols(); renderCompMap(); }
 
@@ -657,11 +876,10 @@ function renderLineMaps() {
   const tbody = document.getElementById('lineMapBody'); tbody.innerHTML = '';
   Object.entries(lineMap).forEach(([from, to]) => {
     const tr = document.createElement('tr');
-    const f = from, t2 = to;
     tr.innerHTML = `
-      <td><input value="${f}" onchange="updateAnyMap(lineMap,'${f}',this.closest('tr').cells[0].querySelector('input').value,this.closest('tr').cells[1].querySelector('input').value)" /></td>
-      <td><input value="${t2}" onchange="updateAnyMap(lineMap,'${f}',this.closest('tr').cells[0].querySelector('input').value,this.closest('tr').cells[1].querySelector('input').value)" /></td>
-      <td><button class="del-btn" onclick="delete lineMap['${f}'];renderLineMaps()">×</button></td>`;
+      <td><input value="${from}" data-key="${from}" onchange="updateAnyMap(lineMap, this)" /></td>
+      <td><input value="${to}" data-val="${to}" onchange="updateAnyMap(lineMap, this)" /></td>
+      <td><button class="del-btn" onclick="delete lineMap['${from}'];renderLineMaps()">×</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -669,52 +887,55 @@ function renderPortMaps() {
   const tbody = document.getElementById('portMapBody'); tbody.innerHTML = '';
   Object.entries(portMap).forEach(([from, to]) => {
     const tr = document.createElement('tr');
-    const f = from, t2 = to;
     tr.innerHTML = `
-      <td><input value="${f}" onchange="updateAnyMap(portMap,'${f}',this.closest('tr').cells[0].querySelector('input').value,this.closest('tr').cells[1].querySelector('input').value)" /></td>
-      <td><input value="${t2}" onchange="updateAnyMap(portMap,'${f}',this.closest('tr').cells[0].querySelector('input').value,this.closest('tr').cells[1].querySelector('input').value)" /></td>
-      <td><button class="del-btn" onclick="delete portMap['${f}'];renderPortMaps()">×</button></td>`;
+      <td><input value="${from}" data-key="${from}" onchange="updateAnyMap(portMap, this)" /></td>
+      <td><input value="${to}" data-val="${to}" onchange="updateAnyMap(portMap, this)" /></td>
+      <td><button class="del-btn" onclick="delete portMap['${from}'];renderPortMaps()">×</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function updateAnyMap(map, oldKey, newFrom, newTo) {
-  delete map[oldKey];
-  map[newFrom.trim().toUpperCase()] = newTo.trim().toUpperCase();
+function updateAnyMap(map, el) {
+  const row = el.closest('tr');
+  const from = row.cells[0].querySelector('input').value.trim().toUpperCase();
+  const to = row.cells[1].querySelector('input').value.trim().toUpperCase();
+  const oldKey = row.cells[0].querySelector('input').dataset.key;
+  delete map[oldKey]; map[from] = to;
 }
 function addLineRow() { lineMap['NUEVA']='DESTINO'; renderLineMaps(); }
 function addPortRow() { portMap['NUEVO']='DESTINO'; renderPortMaps(); }
 
-// ── EXPORT ─────────────────────────────────────────────────────────────
+// ── EXPORT ─────────────────────────────────────────────────
 function exportExcel() {
   if (!lastResult) return;
   const wb = XLSX.utils.book_new();
   const rows = lastResult.discrepancies.map((d,i) => ({
-    '#': i+1, 'Vessel': lastResult.vesselName,
-    'Container': d.container, 'Type': d.type,
-    'Field': d.field, 'Master Value': d.masterValue, 'Comparison Value': d.compValue,
+    '#':i+1,'Vessel':lastResult.vesselName,'Container':d.container,
+    'Type':d.type,'Field':d.field,'Master Value':d.masterValue,'Comparison Value':d.compValue,
   }));
-  if (!rows.length) rows.push({ '#':'-', 'Vessel':lastResult.vesselName, 'Container':'Sin discrepancias' });
+  if (!rows.length) rows.push({'#':'-','Vessel':lastResult.vesselName,'Container':'Sin discrepancias'});
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), lastResult.vesselName.substring(0,31));
   XLSX.writeFile(wb, `discrepancy-${lastResult.vesselName}-${new Date().toISOString().slice(0,10)}.xlsx`);
   toast('Excel exportado ✓', 'success');
 }
 
-// ── RESET ──────────────────────────────────────────────────────────────
+// ── RESET ──────────────────────────────────────────────────
 function resetAll() {
-  masterFile=null; compFiles=[]; lastResult=null;
+  masterFile=null; compFiles=[]; lastResult=null; logEntries=[];
+  updateLogBadge();
   ['masterZone','compZone'].forEach(id => { const el=document.getElementById(id); el.classList.remove('loaded','loaded-b'); });
   document.getElementById('masterTags').innerHTML=''; document.getElementById('compTags').innerHTML='';
   document.getElementById('masterInput').value=''; document.getElementById('compInput').value='';
-  document.getElementById('exportBtn').classList.remove('visible');
-  document.getElementById('resultsArea').innerHTML=`<div class="empty-state"><span class="empty-icon">📊</span>Aún no hay resultados.<br>Cargá los archivos y presioná <strong>Comparar</strong>.</div>`;
+  document.getElementById('exportBtn').style.display='none';
+  document.getElementById('resultsArea').innerHTML=`<div class="empty-state"><span class="empty-icon">📊</span><div class="empty-text">Aún no hay resultados.<br>Cargá los archivos y presioná <strong>Comparar</strong>.</div></div>`;
+  document.getElementById('logArea').innerHTML=`<div class="log-empty"><span class="log-empty-icon">🗒️</span><div style="font-size:13px;color:var(--gray4)">El log aparece después de comparar.</div></div>`;
   const sv=document.getElementById('sbVessel'); sv.textContent='— sin cargar —'; sv.classList.add('empty');
   checkReady();
   showSec('archivos', document.querySelector('[data-sec="archivos"]'));
   toast('Limpiado ✓','success');
 }
 
-// ── MODAL ──────────────────────────────────────────────────────────────
-function openModal() {
+// ── MODALS ─────────────────────────────────────────────────
+function openInfoModal() {
   const keyCol = masterCols.find(c=>c.type==='key');
   const compareCols = masterCols.filter(c=>c.type==='compare');
   const vesselCol = masterCols.find(c=>c.type==='vessel');
@@ -723,7 +944,7 @@ function openModal() {
     html += `<div class="modal-section">Columna clave (identificador de container)</div>
       <div class="col-row"><span class="col-master">${keyCol.name}</span><span class="col-arrow">→</span><span class="col-comp">${compMap[keyCol.name]||keyCol.name}</span></div>`;
   }
-  html += `<div class="modal-section">Columnas comparadas</div>`;
+  html += `<div class="modal-section">Columnas comparadas (${compareCols.length})</div>`;
   compareCols.forEach(col => {
     html += `<div class="col-row"><span class="col-master">${col.name}</span><span class="col-arrow">→</span><span class="col-comp">${compMap[col.name]||col.name}</span></div>`;
   });
@@ -731,18 +952,14 @@ function openModal() {
     html += `<div class="modal-section">Campos auxiliares</div>
       <div class="col-row"><span class="col-master">${vesselCol.name}</span><span class="col-arrow">→</span><span class="col-comp" style="color:var(--gray4)">Vessel name (no comparado)</span></div>`;
   }
-  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('infoModalBody').innerHTML = html;
   document.getElementById('infoModal').classList.add('open');
 }
-function closeModal() { document.getElementById('infoModal').classList.remove('open'); }
+function closeInfoModal() { document.getElementById('infoModal').classList.remove('open'); }
+function closeWarnModal() { document.getElementById('warnModal').classList.remove('open'); }
+function closeErrorModal() { document.getElementById('errorModal').classList.remove('open'); }
 
-// ── TOAST ──────────────────────────────────────────────────────────────
-function toast(msg, type='success') {
-  const el=document.getElementById('toast'); el.textContent=msg; el.className=`toast ${type} show`;
-  setTimeout(()=>el.classList.remove('show'),3000);
-}
-
-// ── JSONBIN SYNC ──────────────────────────────────────────────────────
+// ── JSONBIN SYNC ───────────────────────────────────────────
 const BIN_ID  = '69f9bf4436566621a828cfb8';
 const BIN_KEY = '$2a$10$tUiXqq745FevCAkThPbjYeyumyqweIk50ZN5AhPJxOq1d0OQ8iAnG';
 const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
@@ -751,7 +968,6 @@ async function loadConfig() {
   const syncEl = document.getElementById('syncStatus');
   try {
     syncEl.textContent = '↻ Sincronizando...';
-    syncEl.style.color = 'var(--gray4)';
     const res = await fetch(BIN_URL + '/latest', {
       headers: { 'X-Master-Key': BIN_KEY, 'X-Bin-Meta': 'false' }
     });
@@ -762,10 +978,10 @@ async function loadConfig() {
     if (cfg.lineMap && Object.keys(cfg.lineMap).length) lineMap = cfg.lineMap;
     if (cfg.portMap && Object.keys(cfg.portMap).length) portMap = cfg.portMap;
     syncEl.textContent = '✓ Config sincronizada';
-    syncEl.style.color = '#16a34a';
-    setTimeout(() => { syncEl.textContent = 'KTN · Discrepancy Checker · v2.0'; syncEl.style.color = ''; }, 3000);
+    syncEl.style.color = 'var(--green)';
+    setTimeout(() => { syncEl.textContent = ''; syncEl.style.color = ''; }, 3000);
   } catch(err) {
-    syncEl.textContent = '⚠ Sin conexión — usando config local';
+    syncEl.textContent = '⚠ Config local';
     syncEl.style.color = 'var(--amber)';
     console.warn('JSONBin load error:', err);
   }
@@ -785,17 +1001,23 @@ async function saveConfig() {
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     syncEl.textContent = '✓ Config guardada en la nube';
-    syncEl.style.color = '#16a34a';
+    syncEl.style.color = 'var(--green)';
     toast('Configuración guardada ✓', 'success');
-    setTimeout(() => { syncEl.textContent = 'KTN · Discrepancy Checker · v2.0'; syncEl.style.color = ''; }, 3000);
+    setTimeout(() => { syncEl.textContent = ''; syncEl.style.color = ''; }, 3000);
   } catch(err) {
     toast('Error al guardar: ' + err.message, 'error');
-    console.error(err);
   }
   saveBtn.disabled = false; saveBtn.textContent = '↑ Guardar config';
 }
 
-// ── BOOT ───────────────────────────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el=document.getElementById('toast'); el.textContent=msg;
+  el.className=`toast ${type} show`;
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ── BOOT ───────────────────────────────────────────────────
 setupDrop('masterZone','masterInput',true);
 setupDrop('compZone','compInput',false);
 loadConfig();
