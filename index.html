@@ -168,6 +168,47 @@ tbody td { padding: 9px 16px; font-size: 12px; white-space: nowrap; vertical-ali
 .log-file { font-family: var(--mono); font-size: 10px; font-weight: 600; }
 .log-detail { font-size: 11px; color: var(--gray4); margin-top: 2px; }
 
+/* ── TOGGLE ── */
+.toggle-wrap { display: flex; align-items: center; gap: 0; }
+.toggle-btn { width: 32px; height: 18px; border-radius: 9px; border: none; cursor: pointer; position: relative; flex-shrink: 0; transition: background 0.2s; padding: 0; }
+.toggle-btn.on { background: #16a34a; }
+.toggle-btn.off { background: var(--gray3); }
+.toggle-btn::after { content: ''; position: absolute; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: white; transition: left 0.2s; }
+.toggle-btn.on::after { left: 16px; }
+.toggle-btn.off::after { left: 2px; }
+.master-row-disabled input, .master-row-disabled select { opacity: 0.35; pointer-events: none; }
+.master-row-disabled .del-btn { opacity: 1; pointer-events: all; }
+
+/* ── PRE-COMPARE PANEL ── */
+.precompare-overlay { position: fixed; inset: 0; background: rgba(15,37,64,0.45); z-index: 60; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.precompare-overlay.open { display: flex; }
+.precompare-modal { background: var(--white); border-radius: 10px; width: 720px; max-width: 95vw; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 64px rgba(15,37,64,0.2); }
+.pc-header { padding: 18px 22px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 12px; background: var(--gray1); }
+.pc-header-icon { font-size: 20px; }
+.pc-title { font-size: 15px; font-weight: 600; color: var(--navy); flex: 1; }
+.pc-subtitle { font-size: 12px; color: var(--gray4); margin-top: 2px; }
+.pc-close { background: none; border: none; color: var(--gray4); cursor: pointer; font-size: 22px; padding: 0; line-height: 1; }
+.pc-close:hover { color: var(--red); }
+.pc-body { flex: 1; overflow-y: auto; padding: 20px; }
+.pc-file-block { background: var(--white); border: 1px solid var(--gray2); border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+.pc-file-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--gray2); background: var(--gray1); }
+.pc-file-name { font-size: 12px; font-weight: 600; color: var(--navy); flex: 1; font-family: var(--mono); }
+.pc-found-count { font-size: 11px; font-family: var(--mono); font-weight: 600; }
+.pc-found-count.ok { color: var(--green); }
+.pc-found-count.warn { color: var(--amber); }
+.pc-fields-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.pc-field-row { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 0.5px solid var(--gray2); border-right: 0.5px solid var(--gray2); }
+.pc-field-row:nth-child(3n) { border-right: none; }
+.pc-field-name { font-size: 12px; color: var(--gray5); flex: 1; }
+.pc-field-name.disabled { color: var(--gray3); }
+.pc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pc-dot.found { background: var(--green); }
+.pc-dot.notfound { background: var(--gray3); }
+.pc-dot-label { font-size: 10px; font-family: var(--mono); }
+.pc-dot-label.found { color: var(--green); }
+.pc-dot-label.notfound { color: var(--gray3); }
+.pc-footer { padding: 14px 22px; border-top: 1px solid var(--gray2); display: flex; justify-content: flex-end; gap: 10px; background: var(--gray1); }
+
 /* ── FOOTER ── */
 footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 10px 28px; display: flex; align-items: center; gap: 12px; }
 .footer-txt { font-size: 10px; color: var(--gray3); font-family: var(--mono); letter-spacing: 0.06em; }
@@ -315,7 +356,7 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
       <div class="cfg-panel active" id="cfg-master">
         <div class="cfg-card">
           <div class="cfg-desc">Columnas del archivo <strong>Master</strong>. Nombres exactos tal como vienen del sistema. Tipos: <strong>key</strong> = identificador del container, <strong>compare</strong> = se compara contra el archivo de comparación, <strong>vessel</strong> = nombre del buque, <strong>meta</strong> = info auxiliar.</div>
-          <table class="map-table"><thead><tr><th>Columna en Master</th><th style="width:130px">Tipo</th><th style="width:40px"></th></tr></thead>
+          <table class="map-table"><thead><tr><th style="width:44px">Activo</th><th>Columna en Master</th><th style="width:130px">Tipo</th><th style="width:40px"></th></tr></thead>
           <tbody id="masterColBody"></tbody></table>
           <button class="add-btn" onclick="addMasterCol()">+ Agregar columna</button>
         </div>
@@ -354,6 +395,25 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
   </footer>
 </div><!-- /main -->
 </div><!-- /app -->
+
+<!-- PRE-COMPARE MODAL -->
+<div class="precompare-overlay" id="precompareModal">
+  <div class="precompare-modal">
+    <div class="pc-header">
+      <span class="pc-header-icon">⚙️</span>
+      <div>
+        <div class="pc-title">Configurar comparación</div>
+        <div class="pc-subtitle">La app detectó automáticamente qué columnas tiene cada archivo. Podés ajustar antes de comparar.</div>
+      </div>
+      <button class="pc-close" onclick="closePrecompare()">×</button>
+    </div>
+    <div class="pc-body" id="precompareBody"></div>
+    <div class="pc-footer">
+      <button class="btn btn-outline visible" onclick="closePrecompare()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmCompare()">Comparar →</button>
+    </div>
+  </div>
+</div>
 
 <!-- INFO MODAL -->
 <div class="modal-overlay" id="infoModal" onclick="if(event.target===this)closeInfoModal()">
@@ -396,18 +456,18 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
 <script>
 // ── CONFIG ─────────────────────────────────────────────────
 let masterCols = [
-  { name: 'Unit Nbr',           type: 'key' },
-  { name: 'Line Op',            type: 'compare' },
-  { name: 'Booking Number',     type: 'compare' },
-  { name: 'Type Length',        type: 'compare' },
-  { name: 'POD',                type: 'compare' },
-  { name: 'Frght Kind',         type: 'compare' },
-  { name: 'Temp Required (C)',  type: 'compare' },
-  { name: 'Humd Req.%',         type: 'compare' },
-  { name: 'Vent Req',           type: 'compare' },
-  { name: 'IMDG',               type: 'compare' },
-  { name: 'O/B Actual Visit',   type: 'vessel' },
-  { name: 'Category',           type: 'meta' },
+  { name: 'Unit Nbr',           type: 'key',     enabled: true },
+  { name: 'Line Op',            type: 'compare', enabled: true },
+  { name: 'Booking Number',     type: 'compare', enabled: true },
+  { name: 'Type Length',        type: 'compare', enabled: true },
+  { name: 'POD',                type: 'compare', enabled: true },
+  { name: 'Frght Kind',         type: 'compare', enabled: true },
+  { name: 'Temp Required (C)',  type: 'compare', enabled: true },
+  { name: 'Humd Req.%',         type: 'compare', enabled: true },
+  { name: 'Vent Req',           type: 'compare', enabled: true },
+  { name: 'IMDG',               type: 'compare', enabled: true },
+  { name: 'O/B Actual Visit',   type: 'vessel',  enabled: true },
+  { name: 'Category',           type: 'meta',    enabled: true },
 ];
 let compMap = {
   'Unit Nbr':           'Container, Cntr, Unit, Box No, Container No, Mark/Number',
@@ -619,100 +679,202 @@ function normMaster(col, val) {
 }
 
 // ── COMPARE ────────────────────────────────────────────────
+// State for precompare
+let parsedMasterData = [];
+let parsedCompArrays = [];
+let perFileFieldToggles = {}; // { filename: { fieldName: true/false } }
+
 async function runComparison() {
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true; btn.textContent = 'Analizando...';
+  logEntries = []; updateLogBadge();
+
+  try {
+    // Parse all files first
+    parsedMasterData = [];
+    parsedCompArrays = [];
+
+    try {
+      const result = await parseXLSX(masterFile);
+      parsedMasterData = result.data;
+    } catch(err) {
+      showErrorModal(masterFile.name, 'No se pudo leer el archivo', err.message);
+      btn.disabled = false; btn.textContent = 'Comparar →'; checkReady(); return;
+    }
+
+    for (const f of compFiles) {
+      try {
+        const result = await parseXLSX(f);
+        parsedCompArrays.push({ file: f, data: result.data, sheet: result.sheet, headerRow: result.headerRow });
+      } catch(err) {
+        parsedCompArrays.push({ file: f, data: [], error: err.message });
+      }
+    }
+
+    // Build precompare toggles
+    buildPrecompareToggles();
+    showPrecompare();
+
+  } catch(err) {
+    showErrorModal('Sistema', 'Error inesperado', err.message);
+  }
+
+  btn.disabled = false; btn.textContent = 'Comparar →'; checkReady();
+}
+
+function buildPrecompareToggles() {
+  const activeCols = masterCols.filter(c => c.type === 'compare' && c.enabled !== false);
+  perFileFieldToggles = {};
+
+  parsedCompArrays.forEach(({ file, data }) => {
+    perFileFieldToggles[file.name] = {};
+    activeCols.forEach(col => {
+      const possibles = (compMap[col.name] || col.name).split(',').map(s => s.trim()).filter(Boolean);
+      const found = data.length > 0 && possibles.some(p => data[0][p] !== undefined);
+      perFileFieldToggles[file.name][col.name] = found; // auto: on if found, off if not
+    });
+  });
+}
+
+function showPrecompare() {
+  const activeCols = masterCols.filter(c => c.type === 'compare' && c.enabled !== false);
+  const body = document.getElementById('precompareBody');
+  let html = '';
+
+  parsedCompArrays.forEach(({ file, data, error }) => {
+    if (error) {
+      html += `<div class="pc-file-block">
+        <div class="pc-file-header">
+          <span>🔍</span>
+          <span class="pc-file-name">${file.name}</span>
+          <span class="pc-found-count warn">⚠ Error al leer — se omitirá</span>
+        </div>
+        <div style="padding:12px 16px;font-size:12px;color:var(--red)">${error}</div>
+      </div>`;
+      return;
+    }
+
+    const foundCount = activeCols.filter(col => perFileFieldToggles[file.name][col.name]).length;
+    const countClass = foundCount >= activeCols.length * 0.7 ? 'ok' : 'warn';
+
+    html += `<div class="pc-file-block">
+      <div class="pc-file-header">
+        <span style="font-size:14px">🔍</span>
+        <span class="pc-file-name">${file.name}</span>
+        <span class="pc-found-count ${countClass}">${foundCount} de ${activeCols.length} columnas encontradas</span>
+      </div>
+      <div class="pc-fields-grid" id="pc-grid-${CSS.escape(file.name)}">`;
+
+    activeCols.forEach(col => {
+      const isOn = perFileFieldToggles[file.name][col.name];
+      const fileKey = file.name.replace(/'/g, "\'");
+      html += `<div class="pc-field-row">
+        <button class="toggle-btn ${isOn?'on':'off'}" onclick="togglePCField('${fileKey}','${col.name}',this)"></button>
+        <span class="pc-field-name${isOn?'':' disabled'}" id="pc-lbl-${CSS.escape(file.name+col.name)}">${col.name}</span>
+        <span class="pc-dot ${isOn?'found':'notfound'}"></span>
+        <span class="pc-dot-label ${isOn?'found':'notfound'}">${isOn?'activo':'inactivo'}</span>
+      </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  body.innerHTML = html;
+  document.getElementById('precompareModal').classList.add('open');
+}
+
+function togglePCField(fileName, colName, btn) {
+  const current = perFileFieldToggles[fileName][colName];
+  perFileFieldToggles[fileName][colName] = !current;
+  btn.classList.toggle('on', !current);
+  btn.classList.toggle('off', current);
+  const lbl = btn.nextElementSibling;
+  lbl.classList.toggle('disabled', current);
+  const dot = lbl.nextElementSibling;
+  dot.className = 'pc-dot ' + (!current ? 'found' : 'notfound');
+  const dotLbl = dot.nextElementSibling;
+  dotLbl.className = 'pc-dot-label ' + (!current ? 'found' : 'notfound');
+  dotLbl.textContent = !current ? 'activo' : 'inactivo';
+}
+
+function closePrecompare() {
+  document.getElementById('precompareModal').classList.remove('open');
+}
+
+function showErrorModal(file, msg, detail) {
+  let html = `<div class="modal-alert-item error"><span class="alert-icon">🚨</span><div class="alert-body"><div class="alert-file">${file}</div><div>${msg}</div><div class="alert-detail">${detail}</div></div></div>`;
+  document.getElementById('errorModalBody').innerHTML = html;
+  document.getElementById('errorModal').classList.add('open');
+}
+
+async function confirmCompare() {
+  closePrecompare();
   const btn = document.getElementById('runBtn');
   btn.disabled = true; btn.textContent = 'Procesando...';
   logEntries = []; updateLogBadge();
   const warnings = [], errors = [];
 
   try {
-    // Parse master
-    let masterData = [], masterParseInfo = null;
-    try {
-      const result = await parseXLSX(masterFile);
-      masterData = result.data; masterParseInfo = result;
-      // Validate key column exists
-      const keyCol = masterCols.find(c => c.type === 'key');
-      const hasKey = masterData.length && masterData[0][keyCol?.name] !== undefined;
-      if (!hasKey) {
-        warnings.push({ file: masterFile.name, msg: `Columna clave "${keyCol?.name}" no encontrada`, detail: `Headers encontrados: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}` });
-        addLog('warn', masterFile.name, `Columna clave "${keyCol?.name}" no encontrada`, `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}`);
-      } else {
-        addLog('ok', masterFile.name, `${masterData.length} containers parseados`, `Hoja: ${masterParseInfo.sheet} · Fila de headers: ${masterParseInfo.headerRow + 1}`);
-      }
-    } catch(err) {
-      errors.push({ file: masterFile.name, msg: 'No se pudo leer el archivo', detail: err.message });
-      addLog('error', masterFile.name, 'Error fatal al leer el archivo', err.message);
+    const masterData = parsedMasterData;
+
+    // Validate master
+    const keyCol = masterCols.find(c => c.type === 'key');
+    const hasKey = masterData.length && masterData[0][keyCol?.name] !== undefined;
+    if (!hasKey) {
+      addLog('warn', masterFile.name, `Columna clave "${keyCol?.name}" no encontrada`, `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}`);
+      warnings.push({ file: masterFile.name, msg: `Columna clave "${keyCol?.name}" no encontrada`, detail: `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}` });
+    } else {
+      addLog('ok', masterFile.name, `${masterData.length} containers parseados`, `Master`);
     }
 
-    // Parse comparison files
+    // Use pre-parsed comparison files + apply per-file field toggles
     const compDataArrays = [];
-    for (const f of compFiles) {
-      try {
-        const result = await parseXLSX(f);
-        compDataArrays.push(result.data);
-        // Check if key column found
-        const keyCol = masterCols.find(c => c.type === 'key');
-        const possibles = (compMap[keyCol?.name] || '').split(',').map(s=>s.trim());
-        const foundKey = result.data.length && possibles.some(p => result.data[0][p] !== undefined);
-        if (!foundKey && result.data.length) {
-          warnings.push({ file: f.name, msg: `Columna clave no encontrada`, detail: `Buscado: ${possibles.join(', ')} · Headers: ${Object.keys(result.data[0]).slice(0,8).join(', ')}` });
-          addLog('warn', f.name, 'Columna clave no encontrada en el archivo', `Buscado: ${possibles.join(', ')} · Headers encontrados: ${Object.keys(result.data[0]).slice(0,8).join(', ')}`);
-        } else {
-          // Check which compare columns were found / not found
-          const compareCols = masterCols.filter(c => c.type === 'compare');
-          const missing = [];
-          compareCols.forEach(col => {
-            const poss = (compMap[col.name]||col.name).split(',').map(s=>s.trim());
-            const found = result.data.length && poss.some(p => result.data[0][p] !== undefined);
-            if (!found) missing.push(col.name);
-          });
-          if (missing.length) {
-            warnings.push({ file: f.name, msg: `Columnas no encontradas: ${missing.join(', ')}`, detail: 'Estas columnas se ignorarán en la comparación. Revisá el mapeo en Configuración → Comparison.' });
-            addLog('warn', f.name, `Columnas no encontradas y se ignorarán: ${missing.join(', ')}`, 'Revisá Configuración → Comparison para agregar los nombres alternativos.');
-          }
-          addLog('ok', f.name, `${result.data.length} containers parseados`, `Hoja: ${result.sheet} · Fila de headers: ${result.headerRow + 1}`);
-        }
-      } catch(err) {
-        errors.push({ file: f.name, msg: 'No se pudo leer el archivo', detail: err.message });
-        addLog('error', f.name, 'Error fatal al leer el archivo', err.message);
-        compDataArrays.push([]);
+    for (const { file, data, error, sheet, headerRow } of parsedCompArrays) {
+      if (error) {
+        errors.push({ file: file.name, msg: 'No se pudo leer el archivo', detail: error });
+        addLog('error', file.name, 'Error fatal al leer el archivo', error);
+        compDataArrays.push({ fileName: file.name, data: [], fieldToggles: {} });
+        continue;
       }
+      const keyPossibles = (compMap[keyCol?.name]||'').split(',').map(s=>s.trim());
+      const foundKey = data.length && keyPossibles.some(p => data[0][p] !== undefined);
+      if (!foundKey && data.length) {
+        warnings.push({ file: file.name, msg: 'Columna clave no encontrada', detail: `Buscado: ${keyPossibles.join(', ')} · Headers: ${Object.keys(data[0]).slice(0,8).join(', ')}` });
+        addLog('warn', file.name, 'Columna clave no encontrada', `Buscado: ${keyPossibles.join(', ')}`);
+      } else {
+        addLog('ok', file.name, `${data.length} containers parseados`, `Hoja: ${sheet || '?'}`);
+      }
+      compDataArrays.push({ fileName: file.name, data, fieldToggles: perFileFieldToggles[file.name] || {} });
     }
 
     // Show error modal if fatal errors
     if (errors.length) {
       let html = '';
-      errors.forEach(e => {
-        html += `<div class="modal-alert-item error"><span class="alert-icon">🚨</span><div class="alert-body"><div class="alert-file">${e.file}</div><div>${e.msg}</div><div class="alert-detail">${e.detail}</div></div></div>`;
-      });
+      errors.forEach(e => { html += `<div class="modal-alert-item error"><span class="alert-icon">🚨</span><div class="alert-body"><div class="alert-file">${e.file}</div><div>${e.msg}</div><div class="alert-detail">${e.detail}</div></div></div>`; });
       document.getElementById('errorModalBody').innerHTML = html;
       document.getElementById('errorModal').classList.add('open');
-      btn.disabled = false; btn.textContent = 'Comparar →'; checkReady();
-      return;
+      btn.disabled = false; btn.textContent = 'Comparar →'; checkReady(); return;
     }
 
     // Show warning modal if warnings
     if (warnings.length) {
       let html = `<p style="font-size:12px;color:var(--gray4);margin-bottom:16px">La comparación continuó pero hay datos que conviene revisar:</p>`;
-      warnings.forEach(w => {
-        html += `<div class="modal-alert-item warn"><span class="alert-icon">⚠️</span><div class="alert-body"><div class="alert-file">${w.file}</div><div>${w.msg}</div><div class="alert-detail">${w.detail}</div></div></div>`;
-      });
+      warnings.forEach(w => { html += `<div class="modal-alert-item warn"><span class="alert-icon">⚠️</span><div class="alert-body"><div class="alert-file">${w.file}</div><div>${w.msg}</div><div class="alert-detail">${w.detail}</div></div></div>`; });
       document.getElementById('warnModalBody').innerHTML = html;
       document.getElementById('warnModal').classList.add('open');
     }
 
     // Merge comparison files
     const merged = []; const seen = {};
-    for (const arr of compDataArrays) {
-      for (const row of arr) {
+    for (const { data } of compDataArrays) {
+      for (const row of data) {
         const cntr = resolveCompKey(row); if (!cntr) continue;
         if (seen[cntr] === undefined) { merged.push(row); seen[cntr] = merged.length-1; }
         else merged[seen[cntr]] = row;
       }
     }
 
-    lastResult = doCompare(masterData, merged);
+    lastResult = doCompare(masterData, merged, compDataArrays);
     addLog('ok', 'Comparación', `${lastResult.discrepancies.length} discrepancias encontradas`, `Master: ${lastResult.masterTotal} containers · Comparison: ${lastResult.compTotal} containers`);
     renderResults(lastResult);
     document.getElementById('exportBtn').style.display = 'inline-flex';
@@ -728,10 +890,20 @@ async function runComparison() {
   btn.disabled = false; btn.textContent = 'Comparar →'; checkReady();
 }
 
-function doCompare(masterData, compData) {
+function doCompare(masterData, compData, compDataArrays) {
   const keyCol = masterCols.find(c => c.type === 'key');
   const vesselCol = masterCols.find(c => c.type === 'vessel');
-  const compareCols = masterCols.filter(c => c.type === 'compare');
+  const compareCols = masterCols.filter(c => c.type === 'compare' && c.enabled !== false);
+  // Build a lookup of fieldToggles per container from which file it came
+  const containerFileMap = {};
+  if (compDataArrays) {
+    compDataArrays.forEach(({ fileName, data, fieldToggles }) => {
+      data.forEach(row => {
+        const cntr = resolveCompKey(row);
+        if (cntr) containerFileMap[cntr] = fieldToggles || {};
+      });
+    });
+  }
   const mLookup = {}, cLookup = {};
   const disc = [], dups = [];
 
@@ -752,8 +924,11 @@ function doCompare(masterData, compData) {
   for (const cntr of Object.keys(cLookup)) {
     const cr=cLookup[cntr], mr=mLookup[cntr];
     if (!mr) { disc.push({ container:cntr, type:'missing_in_master', field:'-', masterValue:'-', compValue:'-' }); continue; }
+    const fileToggles = containerFileMap[cntr] || {};
     for (const col of compareCols) {
       const mf = col.name;
+      // Skip if toggled off for this specific file
+      if (fileToggles[mf] === false) continue;
       if (mf === 'Booking Number' && clean(mr['Category']) !== 'Export') continue;
       const mv = normMaster(mf, mr[mf]);
       const cv = normComp(mf, resolveCompVal(cr, mf));
@@ -836,7 +1011,12 @@ function renderMasterCols() {
   masterCols.forEach((col, i) => {
     const tr = document.createElement('tr');
     const locked = col.type === 'key' || col.type === 'vessel';
+    const enabled = col.enabled !== false;
+    if (!enabled) tr.classList.add('master-row-disabled');
     tr.innerHTML = `
+      <td style="width:36px;padding:4px 6px">
+        <button class="toggle-btn ${enabled?'on':'off'}" onclick="toggleCol(${i})" title="${enabled?'Desactivar':'Activar'}"></button>
+      </td>
       <td><input value="${col.name}" onchange="masterCols[${i}].name=this.value;syncCompMap()" /></td>
       <td><select onchange="masterCols[${i}].type=this.value;syncCompMap()">
         ${['key','compare','vessel','meta'].map(t=>`<option value="${t}"${col.type===t?' selected':''}>${t}</option>`).join('')}
@@ -846,11 +1026,16 @@ function renderMasterCols() {
   });
 }
 
+function toggleCol(i) {
+  masterCols[i].enabled = masterCols[i].enabled === false ? true : false;
+  renderMasterCols(); syncCompMap();
+}
+
 function syncCompMap() {
-  // Add new compare cols to compMap if missing
   masterCols.filter(c=>c.type==='compare'||c.type==='key').forEach(col => {
     if (!compMap[col.name]) compMap[col.name] = col.name;
   });
+  renderMasterCols();
   renderCompMap();
 }
 
