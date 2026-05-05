@@ -718,11 +718,19 @@ function resolveCompKey(row) {
 function normalizeOp(v) { const c=cleanKey(v); return lineMap[c] || clean(v).toUpperCase(); }
 function normalizePort(v) { const c=cleanKey(v); return portMap[c] || clean(v).toUpperCase().replace(/\s+/g,''); }
 
+function escapeRegex(s) {
+  return s.replace(/[-[\]{}()*+?.,\^$|#\s]/g, '\\$&');
+}
 function applyReeferClean(col, v) {
   let s = clean(v);
   const cleanList = reeferClean[col] || [];
   for (const token of cleanList) {
-    s = s.replace(new RegExp(token.replace(/[.*+?^${}()|[\]\]/g,'\$&'), 'gi'), '').trim();
+    if (!token) continue;
+    try {
+      s = s.replace(new RegExp(escapeRegex(token), 'gi'), '').trim();
+    } catch(e) {
+      s = s.split(token).join('').trim();
+    }
   }
   return s;
 }
