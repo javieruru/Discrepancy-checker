@@ -303,9 +303,9 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
       <div class="upload-grid">
         <div class="drop-zone" id="masterZone">
           <input type="file" id="masterInput" accept=".xlsx,.xls,.xlsm" />
-          <span class="drop-label">① Master</span>
+          <span class="drop-label">① Navis N4</span>
           <span class="drop-icon">📋</span>
-          <div class="drop-title">Archivo Master</div>
+          <div class="drop-title">Archivo Navis N4</div>
           <div class="drop-sub">.xls · .xlsx · .xlsm</div>
           <div class="file-tags" id="masterTags"></div>
         </div>
@@ -320,7 +320,7 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
       </div>
       <div class="info-box">
         <strong style="color:var(--navy)">ℹ️ Cómo funciona:</strong>
-        Cargá el Master y uno o varios archivos de comparación. Si cargás varios, se combinan en una sola lista.
+        Cargá el Navis N4 y uno o varios archivos de comparación. Si cargás varios, se combinan en una sola lista.
         El vessel se detecta desde <code>O/B Actual Visit</code>. Si hay errores al cargar, revisá la sección <strong>Log</strong>.
       </div>
     </div>
@@ -348,40 +348,74 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
     <!-- CONFIG -->
     <div class="section" id="sec-config">
       <div class="config-tabs">
-        <button class="ctab active" onclick="showCfgTab('master',this)">Master</button>
+        <button class="ctab active" onclick="showCfgTab('n4',this)">Navis N4</button>
         <button class="ctab" onclick="showCfgTab('comparison',this)">Comparison</button>
         <button class="ctab" onclick="showCfgTab('lineas',this)">Líneas</button>
         <button class="ctab" onclick="showCfgTab('puertos',this)">Puertos</button>
+        <button class="ctab" onclick="showCfgTab('iso',this)">ISO</button>
+        <button class="ctab" onclick="showCfgTab('reefer',this)">Reefer</button>
       </div>
-      <div class="cfg-panel active" id="cfg-master">
+      <div class="cfg-panel active" id="cfg-n4">
         <div class="cfg-card">
-          <div class="cfg-desc">Columnas del archivo <strong>Master</strong>. Nombres exactos tal como vienen del sistema. Tipos: <strong>key</strong> = identificador del container, <strong>compare</strong> = se compara contra el archivo de comparación, <strong>vessel</strong> = nombre del buque, <strong>meta</strong> = info auxiliar.</div>
-          <table class="map-table"><thead><tr><th style="width:44px">Activo</th><th>Columna en Master</th><th style="width:130px">Tipo</th><th style="width:40px"></th></tr></thead>
+          <div class="cfg-desc">Columnas del archivo <strong>Navis N4</strong>. Nombres exactos tal como vienen del sistema. Tipos: <strong>key</strong> = identificador del container, <strong>compare</strong> = se compara contra el archivo de comparación, <strong>vessel</strong> = nombre del buque, <strong>meta</strong> = info auxiliar.</div>
+          <table class="map-table"><thead><tr><th style="width:44px">Activo</th><th>Columna en Navis N4</th><th style="width:130px">Tipo</th><th style="width:40px"></th></tr></thead>
           <tbody id="masterColBody"></tbody></table>
           <button class="add-btn" onclick="addMasterCol()">+ Agregar columna</button>
         </div>
       </div>
       <div class="cfg-panel" id="cfg-comparison">
         <div class="cfg-card">
-          <div class="cfg-desc">Para cada columna del Master (incluyendo la clave), indicá los posibles nombres en el archivo de Comparison, <strong>separados por coma</strong>. Se usa el primero que se encuentre.</div>
-          <table class="map-table"><thead><tr><th>Campo Master</th><th style="width:80px">Tipo</th><th>Nombres posibles en Comparison</th></tr></thead>
+          <div class="cfg-desc">Para cada columna del Navis N4 (incluyendo la clave), indicá los posibles nombres en el archivo de Comparison, <strong>separados por coma</strong>. Se usa el primero que se encuentre.</div>
+          <table class="map-table"><thead><tr><th>Campo Navis N4</th><th style="width:80px">Tipo</th><th>Nombres posibles en Comparison</th></tr></thead>
           <tbody id="compMapBody"></tbody></table>
         </div>
       </div>
       <div class="cfg-panel" id="cfg-lineas">
         <div class="cfg-card">
-          <div class="cfg-desc">Mapeo de líneas navieras. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Master.</div>
-          <table class="map-table"><thead><tr><th>Comparison</th><th>Master</th><th style="width:40px"></th></tr></thead>
+          <div class="cfg-desc">Mapeo de líneas navieras. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Navis N4.</div>
+          <table class="map-table"><thead><tr><th>Comparison</th><th>Navis N4</th><th style="width:40px"></th></tr></thead>
           <tbody id="lineMapBody"></tbody></table>
           <button class="add-btn" onclick="addLineRow()">+ Agregar</button>
         </div>
       </div>
       <div class="cfg-panel" id="cfg-puertos">
         <div class="cfg-card">
-          <div class="cfg-desc">Mapeo de códigos de puertos. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Master.</div>
-          <table class="map-table"><thead><tr><th>Comparison</th><th>Master</th><th style="width:40px"></th></tr></thead>
+          <div class="cfg-desc">Mapeo de códigos de puertos. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Navis N4.</div>
+          <table class="map-table"><thead><tr><th>Comparison</th><th>Navis N4</th><th style="width:40px"></th></tr></thead>
           <tbody id="portMapBody"></tbody></table>
           <button class="add-btn" onclick="addPortRow()">+ Agregar</button>
+        </div>
+      </div>
+
+      <div class="cfg-panel" id="cfg-iso">
+        <div class="cfg-card">
+          <div class="cfg-desc">Mapeo de tipos de container ISO. <strong>Izquierda:</strong> valor en Navis N4 (Type Arch ISO). <strong>Derecha:</strong> todos los valores posibles en Comparison separados por coma. Si el valor del Comparison matchea alguno de la lista, se considera igual al de Navis N4.</div>
+          <table class="map-table"><thead><tr><th>Navis N4 (Type Arch ISO)</th><th>Valores posibles en Comparison</th><th style="width:40px"></th></tr></thead>
+          <tbody id="isoMapBody"></tbody></table>
+          <button class="add-btn" onclick="addIsoRow()">+ Agregar</button>
+        </div>
+      </div>
+
+      <div class="cfg-panel" id="cfg-reefer">
+        <div class="cfg-card">
+          <div class="cfg-desc">Textos a limpiar antes de comparar campos reefer. Se eliminan del valor antes de normalizarlo. Lo básico (coma→punto, espacios, conversión a número) siempre se aplica automáticamente.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+            <div>
+              <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray2)">Temp Required (C)</div>
+              <div id="reeferTemp"></div>
+              <button class="add-btn" style="margin-top:8px" onclick="addReeferToken('Temp Required (C)')">+ Agregar</button>
+            </div>
+            <div>
+              <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray2)">Humd Req.%</div>
+              <div id="reeferHumd"></div>
+              <button class="add-btn" style="margin-top:8px" onclick="addReeferToken('Humd Req.%')">+ Agregar</button>
+            </div>
+            <div>
+              <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray2)">Vent Req</div>
+              <div id="reeferVent"></div>
+              <button class="add-btn" style="margin-top:8px" onclick="addReeferToken('Vent Req')">+ Agregar</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -459,7 +493,7 @@ let masterCols = [
   { name: 'Unit Nbr',           type: 'key',     enabled: true },
   { name: 'Line Op',            type: 'compare', enabled: true },
   { name: 'Booking Number',     type: 'compare', enabled: true },
-  { name: 'Type Length',        type: 'compare', enabled: true },
+  { name: 'Type Arch ISO',      type: 'compare', enabled: true },
   { name: 'POD',                type: 'compare', enabled: true },
   { name: 'Frght Kind',         type: 'compare', enabled: true },
   { name: 'Temp Required (C)',  type: 'compare', enabled: true },
@@ -473,7 +507,7 @@ let compMap = {
   'Unit Nbr':           'Container, Cntr, Unit, Box No, Container No, Mark/Number',
   'Line Op':            'Operator, Carrier, Line, Shipping Line',
   'Booking Number':     'Bookno, Booking, BK No, Booking Number',
-  'Type Length':        'Size, Length, Type Length, Teu',
+  'Type Arch ISO':      'Type, Isocode, ISO, ISO Code, Type ISO',
   'POD':                'Next Discharge, Discharge Port, POD, Dest',
   'Frght Kind':         'F/E, Full Empty, Load Status',
   'Temp Required (C)':  'Temp_C, Temperature, Temp, Temp Required, Temp. ºC, Temp °C',
@@ -481,6 +515,22 @@ let compMap = {
   'Vent Req':           'Ventilation, Vent, Vent Req',
   'IMDG':               'IMOCLS, IMO Class, IMDG, IMO/UN',
 };
+// ISO type mapping: N4 value → list of possible comparison values
+let isoMap = {
+  '20DC': '20DC, 20DV, 20G0, 20G1, 22G0, 22G1',
+  '40DC': '40DC, 40DV, 40G0, 40G1, 42G0, 42G1',
+  '40HC': '40HC, 45G0, 45G1, 45HC',
+  '40RH': '40RH, 45R1, 45RE, HREF, 40RE',
+  '20RH': '20RH, 22R1, 22RE',
+};
+
+// Reefer field cleaning: chars/strings to strip before normalizing
+let reeferClean = {
+  'Temp Required (C)': ['ºC', '°C', 'N/A', 'NA', 'n/a', 'SET', 'set'],
+  'Humd Req.%':        ['%', 'N/A', 'NA', 'n/a'],
+  'Vent Req':          ['N/A', 'NA', 'n/a', 'CBM', 'cbm'],
+};
+
 let lineMap = {
   'MSK':'MAERS','MAERSK':'MAERS','MAERS':'MAERS',
   'CMA':'CMA','CMACGM':'CMA',
@@ -652,28 +702,60 @@ function resolveCompKey(row) {
 }
 function normalizeOp(v) { const c=cleanKey(v); return lineMap[c] || clean(v).toUpperCase(); }
 function normalizePort(v) { const c=cleanKey(v); return portMap[c] || clean(v).toUpperCase().replace(/\s+/g,''); }
-function normalizeSize(v) { const m=clean(v).match(/\d+/); return m?m[0]:''; }
-function normalizeTemp(v) {
-  let s = clean(v).replace(',','.').replace(/\s+/g,'');
-  if (!s || s === '-' || s === '--') return '';
-  // Handle cases like "25" that should be "-25"
+
+function applyReeferClean(col, v) {
+  let s = clean(v);
+  const cleanList = reeferClean[col] || [];
+  for (const token of cleanList) {
+    s = s.replace(new RegExp(token.replace(/[.*+?^${}()|[\]\]/g,'\$&'), 'gi'), '').trim();
+  }
+  return s;
+}
+
+function normalizeTemp(col, v) {
+  let s = applyReeferClean(col || 'Temp Required (C)', v);
+  s = s.replace(/[°º]C/gi,'').replace(',','.').replace(/\s+/g,'').trim();
+  if (!s || s==='-' || s==='--' || s==='') return '';
   const n = Number(s);
   return Number.isFinite(n) ? n.toFixed(1) : s;
 }
+
+function normalizeReeferNum(col, v) {
+  let s = applyReeferClean(col, v);
+  s = s.replace(',','.').replace(/\s+/g,'').trim();
+  if (!s || s==='-' || s==='--') return '';
+  const n = Number(s);
+  return Number.isFinite(n) ? n.toFixed(1) : s;
+}
+
+function normalizeISO(v) {
+  const cv = clean(v).toUpperCase().replace(/\s+/g,'');
+  // Check if this comp value matches any isoMap entry
+  for (const [n4val, possibles] of Object.entries(isoMap)) {
+    const list = possibles.split(',').map(s=>s.trim().toUpperCase());
+    if (list.includes(cv)) return n4val;
+  }
+  return cv;
+}
+
 function normalizeFE(v) { const lv=clean(v).toLowerCase(); if(['full','fcl','f'].includes(lv)) return 'FCL'; if(['empty','e','mt','mty'].includes(lv)) return 'Empty'; return clean(v); }
 
 function normComp(col, val) {
   if (col==='Line Op') return normalizeOp(val);
   if (col==='POD') return normalizePort(val);
-  if (col==='Type Length') return normalizeSize(val);
-  if (col==='Temp Required (C)') return normalizeTemp(val);
+  if (col==='Type Arch ISO') return normalizeISO(val);
+  if (col==='Temp Required (C)') return normalizeTemp(col, val);
+  if (col==='Humd Req.%') return normalizeReeferNum(col, val);
+  if (col==='Vent Req') return normalizeReeferNum(col, val);
   if (col==='Frght Kind') return normalizeFE(val);
   return clean(val);
 }
 function normMaster(col, val) {
   if (col==='POD') return normalizePort(val);
-  if (col==='Type Length') return normalizeSize(val);
-  if (col==='Temp Required (C)') return normalizeTemp(val);
+  if (col==='Type Arch ISO') return clean(val).toUpperCase().replace(/\s+/g,'');
+  if (col==='Temp Required (C)') return normalizeTemp(col, val);
+  if (col==='Humd Req.%') return normalizeReeferNum(col, val);
+  if (col==='Vent Req') return normalizeReeferNum(col, val);
   if (col==='Frght Kind') return normalizeFE(val);
   return clean(val);
 }
@@ -864,18 +946,23 @@ async function confirmCompare() {
       document.getElementById('warnModal').classList.add('open');
     }
 
-    // Merge comparison files
-    const merged = []; const seen = {};
+    // Merge ALL comparison files into one list
+    // Each container appears in only one file, so we just combine all rows
+    const merged = [];
+    const seenMerge = new Set();
     for (const { data } of compDataArrays) {
       for (const row of data) {
-        const cntr = resolveCompKey(row); if (!cntr) continue;
-        if (seen[cntr] === undefined) { merged.push(row); seen[cntr] = merged.length-1; }
-        else merged[seen[cntr]] = row;
+        const cntr = resolveCompKey(row);
+        if (!cntr) continue;
+        if (!seenMerge.has(cntr)) {
+          seenMerge.add(cntr);
+          merged.push(row);
+        }
       }
     }
 
     lastResult = doCompare(masterData, merged, compDataArrays);
-    addLog('ok', 'Comparación', `${lastResult.discrepancies.length} discrepancias encontradas`, `Master: ${lastResult.masterTotal} containers · Comparison: ${lastResult.compTotal} containers`);
+    addLog('ok', 'Comparación', `${lastResult.discrepancies.length} discrepancias encontradas`, `Navis N4: ${lastResult.masterTotal} containers · Comparison: ${lastResult.compTotal} containers`);
     renderResults(lastResult);
     document.getElementById('exportBtn').style.display = 'inline-flex';
     showSec('resumen', document.querySelector('[data-sec="resumen"]'));
@@ -909,7 +996,7 @@ function doCompare(masterData, compData, compDataArrays) {
 
   for (const row of masterData) {
     const cntr = cleanKey(row[keyCol?.name]||''); if (!cntr) continue;
-    if (mLookup[cntr]) dups.push({ container:cntr, type:'duplicate_in_master', field:'-', masterValue:'-', compValue:'-' });
+    if (mLookup[cntr]) dups.push({ container:cntr, type:'duplicate_in_n4', field:'-', masterValue:'-', compValue:'-' });
     mLookup[cntr] = row;
   }
   for (const row of compData) {
@@ -923,7 +1010,7 @@ function doCompare(masterData, compData, compDataArrays) {
 
   for (const cntr of Object.keys(cLookup)) {
     const cr=cLookup[cntr], mr=mLookup[cntr];
-    if (!mr) { disc.push({ container:cntr, type:'missing_in_master', field:'-', masterValue:'-', compValue:'-' }); continue; }
+    if (!mr) { disc.push({ container:cntr, type:'missing_in_n4', field:'-', masterValue:'-', compValue:'-' }); continue; }
     const fileToggles = containerFileMap[cntr] || {};
     for (const col of compareCols) {
       const mf = col.name;
@@ -949,24 +1036,24 @@ function renderResults(r) {
   sv.textContent = r.vesselName; sv.classList.remove('empty');
   const d = r.discrepancies;
   const mm = d.filter(x=>x.type==='value_mismatch').length;
-  const misM = d.filter(x=>x.type==='missing_in_master').length;
+  const misM = d.filter(x=>x.type==='missing_in_n4').length;
   const misC = d.filter(x=>x.type==='missing_in_comparison').length;
   const dups = d.filter(x=>x.type.startsWith('duplicate')).length;
 
   document.getElementById('resultsArea').innerHTML = `
     <div class="summary-grid">
-      <div class="stat-card navy"><div class="stat-label">Master</div><div class="stat-value">${r.masterTotal}</div><div class="stat-sub">containers</div></div>
+      <div class="stat-card navy"><div class="stat-label">Navis N4</div><div class="stat-value">${r.masterTotal}</div><div class="stat-sub">containers</div></div>
       <div class="stat-card navy"><div class="stat-label">Comparison</div><div class="stat-value">${r.compTotal}</div><div class="stat-sub">containers</div></div>
       <div class="stat-card red"><div class="stat-label">Discrepancias</div><div class="stat-value red">${d.length}</div><div class="stat-sub">total</div></div>
       <div class="stat-card amber"><div class="stat-label">Mismatch</div><div class="stat-value amber">${mm}</div><div class="stat-sub">valores distintos</div></div>
-      <div class="stat-card red"><div class="stat-label">Missing Master</div><div class="stat-value red">${misM}</div><div class="stat-sub">solo en comp.</div></div>
+      <div class="stat-card red"><div class="stat-label">Missing N4</div><div class="stat-value red">${misM}</div><div class="stat-sub">solo en comp.</div></div>
       <div class="stat-card blue"><div class="stat-label">Missing Comp.</div><div class="stat-value blue">${misC}</div><div class="stat-sub">solo en master</div></div>
     </div>
     <div class="table-card">
       <div class="table-toolbar">
         <button class="filter-btn active" onclick="applyFilter('all',this)">Todos (${d.length})</button>
         ${mm?`<button class="filter-btn fa" onclick="applyFilter('value_mismatch',this)">Mismatch (${mm})</button>`:''}
-        ${misM?`<button class="filter-btn fr" onclick="applyFilter('missing_in_master',this)">Missing Master (${misM})</button>`:''}
+        ${misM?`<button class="filter-btn fr" onclick="applyFilter('missing_in_n4',this)">Missing N4 (${misM})</button>`:''}
         ${misC?`<button class="filter-btn fb" onclick="applyFilter('missing_in_comparison',this)">Missing Comp. (${misC})</button>`:''}
         ${dups?`<button class="filter-btn" onclick="applyFilter('duplicate',this)">Duplicados (${dups})</button>`:''}
       </div>
@@ -983,14 +1070,14 @@ function applyFilter(type, btn) {
 function buildTable(disc, filter) {
   const rows = filter ? disc.filter(d=>d.type===filter||d.type.startsWith(filter)) : disc;
   if (!rows.length) return `<div class="no-disc"><span class="no-disc-icon">✓</span><div class="no-disc-text">Sin discrepancias en esta categoría</div></div>`;
-  const TL = { value_mismatch:'Mismatch', missing_in_master:'Missing Master', missing_in_comparison:'Missing Comp.', duplicate_in_master:'Dup. Master', duplicate_in_comparison:'Dup. Comp.' };
-  const TC = { value_mismatch:'bm', missing_in_master:'bmm', missing_in_comparison:'bmc', duplicate_in_master:'bd', duplicate_in_comparison:'bd' };
-  const GL = { value_mismatch:'gl-a', missing_in_master:'gl-r', missing_in_comparison:'gl-b', duplicate_in_master:'gl-p', duplicate_in_comparison:'gl-p' };
+  const TL = { value_mismatch:'Mismatch', missing_in_n4:'Missing N4', missing_in_comparison:'Missing Comp.', duplicate_in_n4:'Dup. N4', duplicate_in_comparison:'Dup. Comp.' };
+  const TC = { value_mismatch:'bm', missing_in_n4:'bmm', missing_in_comparison:'bmc', duplicate_in_n4:'bd', duplicate_in_comparison:'bd' };
+  const GL = { value_mismatch:'gl-a', missing_in_n4:'gl-r', missing_in_comparison:'gl-b', duplicate_in_n4:'gl-p', duplicate_in_comparison:'gl-p' };
   const grouped = {};
   rows.forEach(d => { if(!grouped[d.container]) grouped[d.container]=[]; grouped[d.container].push(d); });
   let n = 0;
   return `<table>
-    <thead><tr><th>#</th><th>Container</th><th>Tipo</th><th>Campo</th><th>Master</th><th>Comparison</th></tr></thead>
+    <thead><tr><th>#</th><th>Container</th><th>Tipo</th><th>Campo</th><th>Navis N4</th><th>Comparison</th></tr></thead>
     <tbody>${rows.map(d => {
       n++;
       const grp=grouped[d.container], isFirst=grp[0]===d, isMulti=grp.length>1;
@@ -1089,13 +1176,53 @@ function updateAnyMap(map, el) {
 function addLineRow() { lineMap['NUEVA']='DESTINO'; renderLineMaps(); }
 function addPortRow() { portMap['NUEVO']='DESTINO'; renderPortMaps(); }
 
+function renderIsoMap() {
+  const tbody = document.getElementById('isoMapBody'); tbody.innerHTML = '';
+  Object.entries(isoMap).forEach(([n4val, possibles]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input value="${n4val}" data-key="${n4val}" onchange="updateAnyMap(isoMap,this)" style="font-weight:600" /></td>
+      <td><input value="${possibles}" onchange="isoMap['${n4val}']=this.value" /></td>
+      <td><button class="del-btn" onclick="delete isoMap['${n4val}'];renderIsoMap()">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function addIsoRow() { isoMap['NUEVO']='VALOR1, VALOR2'; renderIsoMap(); }
+
+const REEFER_IDS = {
+  'Temp Required (C)': 'reeferTemp',
+  'Humd Req.%': 'reeferHumd',
+  'Vent Req': 'reeferVent',
+};
+function renderReeferClean() {
+  Object.entries(REEFER_IDS).forEach(([field, elId]) => {
+    const wrap = document.getElementById(elId); if (!wrap) return;
+    wrap.innerHTML = '';
+    const tokens = reeferClean[field] || [];
+    tokens.forEach((token, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px';
+      row.innerHTML = `
+        <input value="${token}" onchange="reeferClean['${field}'][${i}]=this.value"
+          style="flex:1;font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:4px;background:var(--gray1);border:1.5px solid transparent" />
+        <button class="del-btn" onclick="reeferClean['${field}'].splice(${i},1);renderReeferClean()">×</button>`;
+      wrap.appendChild(row);
+    });
+  });
+}
+function addReeferToken(field) {
+  if (!reeferClean[field]) reeferClean[field] = [];
+  reeferClean[field].push('nuevo');
+  renderReeferClean();
+}
+
 // ── EXPORT ─────────────────────────────────────────────────
 function exportExcel() {
   if (!lastResult) return;
   const wb = XLSX.utils.book_new();
   const rows = lastResult.discrepancies.map((d,i) => ({
     '#':i+1,'Vessel':lastResult.vesselName,'Container':d.container,
-    'Type':d.type,'Field':d.field,'Master Value':d.masterValue,'Comparison Value':d.compValue,
+    'Type':d.type,'Field':d.field,'N4 Value':d.masterValue,'Comparison Value':d.compValue,
   }));
   if (!rows.length) rows.push({'#':'-','Vessel':lastResult.vesselName,'Container':'Sin discrepancias'});
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), lastResult.vesselName.substring(0,31));
@@ -1131,7 +1258,8 @@ function openInfoModal() {
   }
   html += `<div class="modal-section">Columnas comparadas (${compareCols.length})</div>`;
   compareCols.forEach(col => {
-    html += `<div class="col-row"><span class="col-master">${col.name}</span><span class="col-arrow">→</span><span class="col-comp">${compMap[col.name]||col.name}</span></div>`;
+    const extra = col.name === 'Type Arch ISO' ? ` <span style="font-size:9px;color:var(--gray4)">(mapeo ISO)</span>` : '';
+    html += `<div class="col-row"><span class="col-master">${col.name}${extra}</span><span class="col-arrow">→</span><span class="col-comp">${compMap[col.name]||col.name}</span></div>`;
   });
   if (vesselCol) {
     html += `<div class="modal-section">Campos auxiliares</div>
@@ -1162,6 +1290,8 @@ async function loadConfig() {
     if (cfg.compMap && Object.keys(cfg.compMap).length) compMap = cfg.compMap;
     if (cfg.lineMap && Object.keys(cfg.lineMap).length) lineMap = cfg.lineMap;
     if (cfg.portMap && Object.keys(cfg.portMap).length) portMap = cfg.portMap;
+    if (cfg.isoMap && Object.keys(cfg.isoMap).length) isoMap = cfg.isoMap;
+    if (cfg.reeferClean && Object.keys(cfg.reeferClean).length) reeferClean = cfg.reeferClean;
     syncEl.textContent = '✓ Config sincronizada';
     syncEl.style.color = 'var(--green)';
     setTimeout(() => { syncEl.textContent = ''; syncEl.style.color = ''; }, 3000);
@@ -1171,6 +1301,7 @@ async function loadConfig() {
     console.warn('JSONBin load error:', err);
   }
   renderMasterCols(); renderCompMap(); renderLineMaps(); renderPortMaps();
+  renderIsoMap(); renderReeferClean();
 }
 
 async function saveConfig() {
@@ -1178,7 +1309,7 @@ async function saveConfig() {
   const saveBtn = document.getElementById('saveConfigBtn');
   saveBtn.disabled = true; saveBtn.textContent = 'Guardando...';
   try {
-    const cfg = { masterCols, compMap, lineMap, portMap };
+    const cfg = { masterCols, compMap, lineMap, portMap, isoMap, reeferClean };
     const res = await fetch(BIN_URL, {
       method: 'PUT',
       headers: { 'X-Master-Key': BIN_KEY, 'Content-Type': 'application/json' },
