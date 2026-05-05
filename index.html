@@ -64,8 +64,8 @@ body { font-family: var(--sans); background: var(--gray1); color: var(--gray5); 
 
 /* ── UPLOAD ── */
 .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-.drop-zone { border: 2px dashed var(--gray2); border-radius: 8px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white); position: relative; }
-.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop-zone { border: 2px dashed var(--gray2); border-radius: 8px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--white); position: relative; overflow: hidden; }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 2; }
 .drop-zone:hover, .drop-zone.dragover { border-color: var(--navy); background: rgba(30,58,95,0.03); }
 .drop-zone.loaded { border-style: solid; border-color: var(--navy); }
 .drop-zone.loaded-b { border-style: solid; border-color: var(--blue); }
@@ -608,12 +608,27 @@ function showCfgTab(name, el) {
 
 // ── FILES ──────────────────────────────────────────────────
 function setupDrop(zoneId, inputId, isMaster) {
-  const zone = document.getElementById(zoneId), input = document.getElementById(inputId);
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles([...e.dataTransfer.files], isMaster); });
-  input.addEventListener('change', () => handleFiles([...input.files], isMaster));
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+
+  // Drag and drop
+  zone.addEventListener('dragenter', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('dragover'); });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    if (e.dataTransfer && e.dataTransfer.files.length) handleFiles([...e.dataTransfer.files], isMaster);
+  });
+
+  // Click to open file picker
+  input.addEventListener('change', () => {
+    if (input.files && input.files.length) handleFiles([...input.files], isMaster);
+    input.value = ''; // reset so same file can be re-selected
+  });
 }
+
+
 function handleFiles(files, isMaster) {
   const valid = files.filter(f => /\.xlsx?$|\.xlsm$/i.test(f.name));
   if (!valid.length) { toast('Solo .xlsx / .xls / .xlsm', 'error'); return; }
