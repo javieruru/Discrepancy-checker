@@ -206,6 +206,7 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
     <div class="topbar-title" id="topTitle">Archivos</div>
     <div class="topbar-actions">
       <button class="btn btn-ghost danger" onclick="resetAll()">✕ Reset</button>
+      <button class="btn btn-ghost" id="saveConfigBtn" onclick="saveConfig()" style="display:none">↑ Guardar config</button>
       <button class="btn btn-ghost" id="exportBtn" onclick="exportExcel()">↓ Exportar Excel</button>
       <button class="btn btn-primary" id="runBtn" onclick="runComparison()" disabled>Comparar →</button>
     </div>
@@ -298,7 +299,7 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
   </div><!-- /content -->
 
   <footer>
-    <span class="footer-txt">KTN <b>·</b> Discrepancy Checker <b>·</b> v2.0</span>
+    <span class="footer-txt" id="syncStatus">KTN <b>·</b> Discrepancy Checker <b>·</b> v2.0</span>
     <button class="footer-info" onclick="openModal()">ⓘ Columnas</button>
   </footer>
 </div><!-- /main -->
@@ -371,6 +372,8 @@ function showSec(name, el) {
   document.getElementById('sec-' + name).classList.add('active');
   el.classList.add('active');
   document.getElementById('topTitle').textContent = secTitles[name] || name;
+  const saveBtn = document.getElementById('saveConfigBtn');
+  saveBtn.style.display = name === 'config' ? 'inline-flex' : 'none';
 }
 function showCfgTab(name, el) {
   document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
@@ -739,10 +742,67 @@ function toast(msg, type='success') {
   setTimeout(()=>el.classList.remove('show'),3000);
 }
 
+// ── GIST SYNC ──────────────────────────────────────────────────────────
+const GIST_ID = '17596d4acf4298402f780e66d7ec8429';
+const GIST_TOKEN = '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';
+const GIST_FILE = 'ktn-config.json';
+
+async function loadConfig() {
+  const syncEl = document.getElementById('syncStatus');
+  try {
+    syncEl.textContent = '↻ Sincronizando...';
+    syncEl.style.color = 'var(--gray4)';
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      headers: { 'Authorization': `token ${GIST_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!res.ok) throw new Error('Error al leer Gist: ' + res.status);
+    const data = await res.json();
+    const raw = data.files[GIST_FILE]?.content;
+    if (raw) {
+      const cfg = JSON.parse(raw);
+      if (cfg.masterCols) masterCols = cfg.masterCols;
+      if (cfg.compMap)    compMap    = cfg.compMap;
+      if (cfg.lineMap)    lineMap    = cfg.lineMap;
+      if (cfg.portMap)    portMap    = cfg.portMap;
+    }
+    syncEl.textContent = '✓ Config sincronizada';
+    syncEl.style.color = '#16a34a';
+    setTimeout(() => { syncEl.textContent = 'KTN · Discrepancy Checker · v2.0'; syncEl.style.color = ''; }, 3000);
+  } catch(err) {
+    syncEl.textContent = '⚠ Sin conexión al Gist — usando config local';
+    syncEl.style.color = 'var(--amber)';
+    console.warn('Gist load error:', err);
+  }
+  renderMasterCols(); renderCompMap(); renderLineMaps(); renderPortMaps();
+}
+
+async function saveConfig() {
+  const syncEl = document.getElementById('syncStatus');
+  const saveBtn = document.getElementById('saveConfigBtn');
+  saveBtn.disabled = true; saveBtn.textContent = 'Guardando...';
+  try {
+    const cfg = { masterCols, compMap, lineMap, portMap };
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `token ${GIST_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(cfg, null, 2) } } })
+    });
+    if (!res.ok) throw new Error('Error al guardar: ' + res.status);
+    syncEl.textContent = '✓ Config guardada en la nube';
+    syncEl.style.color = '#16a34a';
+    toast('Configuración guardada ✓', 'success');
+    setTimeout(() => { syncEl.textContent = 'KTN · Discrepancy Checker · v2.0'; syncEl.style.color = ''; }, 3000);
+  } catch(err) {
+    toast('Error al guardar: ' + err.message, 'error');
+    console.error(err);
+  }
+  saveBtn.disabled = false; saveBtn.textContent = '↑ Guardar config';
+}
+
 // ── BOOT ───────────────────────────────────────────────────────────────
 setupDrop('masterZone','masterInput',true);
 setupDrop('compZone','compInput',false);
-renderMasterCols(); renderCompMap(); renderLineMaps(); renderPortMaps();
+loadConfig();
 </script>
 </body>
 </html>
