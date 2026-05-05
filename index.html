@@ -160,7 +160,8 @@ tbody td { padding: 9px 16px; font-size: 12px; white-space: nowrap; vertical-ali
 .log-empty-icon { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.4; }
 .log-section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray4); margin-bottom: 10px; margin-top: 20px; font-family: var(--mono); padding-bottom: 6px; border-bottom: 1px solid var(--gray2); }
 .log-section-title:first-child { margin-top: 0; }
-.log-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 5px; margin-bottom: 6px; font-size: 12px; line-height: 1.5; }
+.log-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 5px; margin-bottom: 6px; font-size: 12px; line-height: 1.5; transition: opacity 0.15s; }
+.log-item[onclick]:hover { opacity: 0.8; }
 .log-item.ok { background: var(--green-dim); border: 1px solid rgba(22,163,74,0.15); }
 .log-item.warn { background: var(--amber-dim); border: 1px solid rgba(217,119,6,0.15); }
 .log-item.error { background: var(--red-dim); border: 1px solid rgba(227,6,19,0.15); }
@@ -373,16 +374,16 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
       </div>
       <div class="cfg-panel" id="cfg-lineas">
         <div class="cfg-card">
-          <div class="cfg-desc">Mapeo de líneas navieras. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Navis N4.</div>
-          <table class="map-table"><thead><tr><th>Comparison</th><th>Navis N4</th><th style="width:40px"></th></tr></thead>
+          <div class="cfg-desc">Mapeo de líneas navieras. <strong>Izquierda:</strong> valor en Navis N4. <strong>Derecha:</strong> todos los valores posibles en Comparison separados por coma. Se compara en mayúsculas automáticamente.</div>
+          <table class="map-table"><thead><tr><th>Navis N4</th><th>Valores posibles en Comparison (separados por coma)</th><th style="width:40px"></th></tr></thead>
           <tbody id="lineMapBody"></tbody></table>
           <button class="add-btn" onclick="addLineRow()">+ Agregar</button>
         </div>
       </div>
       <div class="cfg-panel" id="cfg-puertos">
         <div class="cfg-card">
-          <div class="cfg-desc">Mapeo de códigos de puertos. <strong>Izquierda:</strong> como viene en Comparison. <strong>Derecha:</strong> como aparece en Navis N4.</div>
-          <table class="map-table"><thead><tr><th>Comparison</th><th>Navis N4</th><th style="width:40px"></th></tr></thead>
+          <div class="cfg-desc">Mapeo de códigos de puertos. <strong>Izquierda:</strong> valor en Navis N4. <strong>Derecha:</strong> todos los valores posibles en Comparison separados por coma. Se compara en mayúsculas automáticamente.</div>
+          <table class="map-table"><thead><tr><th>Navis N4</th><th>Valores posibles en Comparison (separados por coma)</th><th style="width:40px"></th></tr></thead>
           <tbody id="portMapBody"></tbody></table>
           <button class="add-btn" onclick="addPortRow()">+ Agregar</button>
         </div>
@@ -446,6 +447,22 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
     <div class="pc-footer">
       <button class="btn btn-outline visible" onclick="closePrecompare()">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmCompare()">Comparar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- FILE DETAIL MODAL -->
+<div class="modal-overlay" id="fileDetailModal" onclick="if(event.target===this)closeFileDetail()">
+  <div class="modal" style="width:900px;max-width:96vw">
+    <div class="modal-header">
+      <span class="modal-header-icon">📄</span>
+      <div class="modal-title" id="fileDetailTitle">Detalle de archivo</div>
+      <button class="modal-close" onclick="closeFileDetail()">×</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div style="overflow-x:auto;overflow-y:auto;max-height:65vh">
+        <div id="fileDetailBody"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -535,20 +552,27 @@ let reeferClean = {
 };
 
 let lineMap = {
-  'MSK':'MAERS','MAERSK':'MAERS','MAERS':'MAERS',
-  'CMA':'CMA','CMACGM':'CMA',
-  'HAPAG':'HAPAG','HAPAGLLOYD':'HAPAG',
-  'ONE':'ONE','EVERGREEN':'EVERGREEN',
-  'COSCO':'COSCO','MSC':'MSC','COS':'COS',
+  'MAERS': 'MSK, MAERSK, MAERS',
+  'CMA':   'CMA, CMACGM, CMA CGM',
+  'HAPAG': 'HAPAG, HAPAGLLOYD, HAPAG-LLOYD',
+  'ONE':   'ONE',
+  'EVERGREEN': 'EVERGREEN, EMC',
+  'COSCO': 'COSCO, COS',
+  'MSC':   'MSC',
 };
 let portMap = {
-  'BRSSZBT':'BRSSZ','MAPTMTM':'MAPTM','ARBUEAR':'ARBUE',
-  'DEHAMEK':'DEHAM','DEBRVTM':'DEBRV','BEANT913':'BEANR',
+  'BRSSZ': 'BRSSZBT, BRSSZ',
+  'MAPTM': 'MAPTMTM, MAPTM',
+  'ARBUE': 'ARBUEAR, ARBUE',
+  'DEHAM': 'DEHAMEK, DEHAM',
+  'DEBRV': 'DEBRVTM, DEBRV',
+  'BEANR': 'BEANT913, BEANR',
 };
 
 // ── STATE ──────────────────────────────────────────────────
 let masterFile = null, compFiles = [], lastResult = null;
 let logEntries = [];
+let rawFileData = {}; // fileName -> { headers: [], rows: [] }
 
 // ── LOG HELPERS ────────────────────────────────────────────
 function addLog(type, file, message, detail = '') {
@@ -575,20 +599,71 @@ function renderLog() {
   const ok = logEntries.filter(e => e.type === 'ok');
   const warn = logEntries.filter(e => e.type === 'warn');
   const err = logEntries.filter(e => e.type === 'error');
+
+  const makeItem = (e, icon, clickable) => {
+    const hasData = rawFileData[e.file] && rawFileData[e.file].data && rawFileData[e.file].data.length;
+    const clickAttr = (clickable && hasData) ? `onclick="openFileDetail('${e.file.replace(/'/g,"\'")}')" style="cursor:pointer"` : '';
+    const hint = (clickable && hasData) ? `<span style="font-size:10px;color:var(--navy);font-family:var(--mono);margin-left:6px">↗ ver datos</span>` : '';
+    return `<div class="log-item ${e.type}" ${clickAttr}>
+      <span class="log-icon">${icon}</span>
+      <div class="log-msg">
+        <div class="log-file">${e.file}${hint}</div>
+        <div>${e.message}</div>
+        ${e.detail?`<div class="log-detail">${e.detail}</div>`:''}
+      </div>
+      <span style="color:var(--gray3);font-size:10px;font-family:var(--mono)">${e.time}</span>
+    </div>`;
+  };
+
   let html = '';
   if (err.length) {
     html += `<div class="log-section-title">🚨 Errores fatales (${err.length})</div>`;
-    err.forEach(e => html += `<div class="log-item error"><span class="log-icon">🚨</span><div class="log-msg"><div class="log-file">${e.file}</div><div>${e.message}</div>${e.detail?`<div class="log-detail">${e.detail}</div>`:''}</div><span style="color:var(--gray3);font-size:10px;font-family:var(--mono)">${e.time}</span></div>`);
+    err.forEach(e => html += makeItem(e, '🚨', true));
   }
   if (warn.length) {
     html += `<div class="log-section-title">⚠️ Advertencias (${warn.length})</div>`;
-    warn.forEach(e => html += `<div class="log-item warn"><span class="log-icon">⚠️</span><div class="log-msg"><div class="log-file">${e.file}</div><div>${e.message}</div>${e.detail?`<div class="log-detail">${e.detail}</div>`:''}</div><span style="color:var(--gray3);font-size:10px;font-family:var(--mono)">${e.time}</span></div>`);
+    warn.forEach(e => html += makeItem(e, '⚠️', true));
   }
   if (ok.length) {
     html += `<div class="log-section-title">✓ Procesado correctamente (${ok.length})</div>`;
-    ok.forEach(e => html += `<div class="log-item ok"><span class="log-icon">✓</span><div class="log-msg"><div class="log-file">${e.file}</div><div>${e.message}</div>${e.detail?`<div class="log-detail">${e.detail}</div>`:''}</div><span style="color:var(--gray3);font-size:10px;font-family:var(--mono)">${e.time}</span></div>`);
+    ok.forEach(e => html += makeItem(e, '✓', true));
   }
   area.innerHTML = html;
+}
+
+function openFileDetail(fileName) {
+  const store = rawFileData[fileName];
+  if (!store || !store.data || !store.data.length) {
+    toast('No hay datos disponibles para este archivo', 'error');
+    return;
+  }
+  const data = store.data;
+  const headers = Object.keys(data[0]);
+  document.getElementById('fileDetailTitle').textContent = fileName + ` — ${data.length} containers`;
+
+  // Build table
+  let html = `<table style="width:100%;border-collapse:collapse;min-width:600px">
+    <thead><tr style="background:var(--gray1);position:sticky;top:0;z-index:2">
+      <th style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray4);padding:10px 14px;border-bottom:1px solid var(--gray2);white-space:nowrap;text-align:left">#</th>
+      ${headers.map(h => `<th style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray4);padding:10px 14px;border-bottom:1px solid var(--gray2);white-space:nowrap;text-align:left">${h}</th>`).join('')}
+    </tr></thead>
+    <tbody>
+      ${data.map((row, i) => `<tr style="border-bottom:1px solid var(--gray2)">
+        <td style="padding:8px 14px;font-size:11px;color:var(--gray3);font-family:var(--mono)">${i+1}</td>
+        ${headers.map(h => {
+          const val = row[h] !== undefined && row[h] !== '' ? String(row[h]) : '';
+          return `<td style="padding:8px 14px;font-size:12px;color:var(--gray5);white-space:nowrap">${val || '<span style="color:var(--gray3)">—</span>'}</td>`;
+        }).join('')}
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+
+  document.getElementById('fileDetailBody').innerHTML = html;
+  document.getElementById('fileDetailModal').classList.add('open');
+}
+
+function closeFileDetail() {
+  document.getElementById('fileDetailModal').classList.remove('open');
 }
 
 // ── NAV ────────────────────────────────────────────────────
@@ -718,8 +793,22 @@ function resolveCompKey(row) {
   if (!col) return '';
   return cleanKey(resolveCompVal(row, col.name));
 }
-function normalizeOp(v) { const c=cleanKey(v); return lineMap[c] || clean(v).toUpperCase(); }
-function normalizePort(v) { const c=cleanKey(v); return portMap[c] || clean(v).toUpperCase().replace(/\s+/g,''); }
+function normalizeOp(v) {
+  const cv = cleanKey(v);
+  for (const [n4val, possibles] of Object.entries(lineMap)) {
+    const list = possibles.split(',').map(s => s.trim().toUpperCase().replace(/\s+/g,''));
+    if (list.includes(cv)) return n4val.toUpperCase();
+  }
+  return cv;
+}
+function normalizePort(v) {
+  const cv = cleanKey(v);
+  for (const [n4val, possibles] of Object.entries(portMap)) {
+    const list = possibles.split(',').map(s => s.trim().toUpperCase().replace(/\s+/g,''));
+    if (list.includes(cv)) return n4val.toUpperCase();
+  }
+  return cv;
+}
 
 function escapeRegex(s) {
   return s.replace(/[-[\]{}()*+?.,\^$|#\s]/g, '\\$&');
@@ -785,7 +874,8 @@ function normComp(col, val) {
   return clean(val);
 }
 function normMaster(col, val) {
-  if (col==='POD') return normalizePort(val);
+  if (col==='Line Op') return clean(val).toUpperCase().replace(/\s+/g,'');
+  if (col==='POD') return clean(val).toUpperCase().replace(/\s+/g,'');
   if (col==='Type Arch ISO') return clean(val).toUpperCase().replace(/\s+/g,'');
   if (col==='Temp Required (C)') return normalizeTemp(col, val);
   if (col==='Humd Req.%') return normalizeReeferNum(col, val);
@@ -941,6 +1031,7 @@ async function confirmCompare() {
       addLog('warn', masterFile.name, `Columna clave "${keyCol?.name}" no encontrada`, `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}`);
       warnings.push({ file: masterFile.name, msg: `Columna clave "${keyCol?.name}" no encontrada`, detail: `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}` });
     } else {
+      rawFileData[masterFile.name] = { data: masterData };
       addLog('ok', masterFile.name, `${masterData.length} containers parseados`, `Master`);
     }
 
@@ -959,6 +1050,19 @@ async function confirmCompare() {
         warnings.push({ file: file.name, msg: 'Columna clave no encontrada', detail: `Buscado: ${keyPossibles.join(', ')} · Headers: ${Object.keys(data[0]).slice(0,8).join(', ')}` });
         addLog('warn', file.name, 'Columna clave no encontrada', `Buscado: ${keyPossibles.join(', ')}`);
       } else {
+        // Check which compare columns are missing
+        const activeCols = masterCols.filter(c => c.type === 'compare' && c.enabled !== false);
+        const missingCols = [];
+        activeCols.forEach(col => {
+          const poss = (compMap[col.name]||col.name).split(',').map(s=>s.trim());
+          const found = data.length && poss.some(p => data[0][p] !== undefined);
+          if (!found) missingCols.push(col.name);
+        });
+        if (missingCols.length) {
+          warnings.push({ file: file.name, msg: `Columnas no encontradas: ${missingCols.join(', ')}`, detail: 'Estas columnas no se compararán. Revisá Configuración → Comparison para agregar nombres alternativos.' });
+          addLog('warn', file.name, `Columnas no encontradas: ${missingCols.join(', ')}`, 'Revisá Configuración → Comparison.');
+        }
+        rawFileData[file.name] = { data };
         addLog('ok', file.name, `${data.length} containers parseados`, `Hoja: ${sheet || '?'}`);
       }
       compDataArrays.push({ fileName: file.name, data, fieldToggles: perFileFieldToggles[file.name] || {} });
@@ -1149,10 +1253,10 @@ function buildTable(allContainers, filter) {
       n++;
       rows.push(`<tr>
         <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
+        <td><span class="type-badge" style="background:rgba(22,163,74,0.1);color:#16a34a;border:1px solid rgba(22,163,74,0.2)">OK</span></td>
         <td class="cntr-cell">${c.container}</td>
         <td style="font-size:11px;color:var(--gray4)">${c.lineOp}</td>
-        <td><span class="type-badge" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(22,163,74,0.2)">OK</span></td>
-        <td style="color:var(--gray3)" colspan="3">—</td>
+        <td></td><td></td><td></td><td></td>
       </tr>`);
     } else {
       const disc = c.discrepancies;
@@ -1164,6 +1268,7 @@ function buildTable(allContainers, filter) {
         const pl = isMulti ? 'pl-e' : '';
         rows.push(`<tr class="${lc} ${pl}">
           <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
+          <td></td>
           <td class="cntr-cell">${isFirst||!isMulti?c.container:`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
           <td style="font-size:11px;color:var(--gray4)">${isFirst||!isMulti?c.lineOp:''}</td>
           <td><span class="type-badge ${TC[d.type]||''}">${TL[d.type]||d.type}</span></td>
@@ -1176,7 +1281,7 @@ function buildTable(allContainers, filter) {
   });
 
   return `<table>
-    <thead><tr><th>#</th><th>Container</th><th>Line Op</th><th>Tipo</th><th>Campo</th><th>Navis N4</th><th>Comparison</th></tr></thead>
+    <thead><tr><th>#</th><th>Estado</th><th>Container</th><th>Line Op</th><th>Tipo</th><th>Campo</th><th>Navis N4</th><th>Comparison</th></tr></thead>
     <tbody>${rows.join('')}</tbody></table>`;
 }
 
@@ -1234,23 +1339,23 @@ function delMasterCol(i) { const n=masterCols[i].name; masterCols.splice(i,1); d
 
 function renderLineMaps() {
   const tbody = document.getElementById('lineMapBody'); tbody.innerHTML = '';
-  Object.entries(lineMap).forEach(([from, to]) => {
+  Object.entries(lineMap).forEach(([n4val, possibles]) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input value="${from}" data-key="${from}" onchange="updateAnyMap(lineMap, this)" /></td>
-      <td><input value="${to}" data-val="${to}" onchange="updateAnyMap(lineMap, this)" /></td>
-      <td><button class="del-btn" onclick="delete lineMap['${from}'];renderLineMaps()">×</button></td>`;
+      <td><input value="${n4val}" data-key="${n4val}" onchange="updateAnyMap(lineMap,this)" style="font-weight:600" /></td>
+      <td><input value="${possibles}" onchange="lineMap[this.closest('tr').cells[0].querySelector('input').value]=this.value" /></td>
+      <td><button class="del-btn" onclick="delete lineMap['${n4val}'];renderLineMaps()">×</button></td>`;
     tbody.appendChild(tr);
   });
 }
 function renderPortMaps() {
   const tbody = document.getElementById('portMapBody'); tbody.innerHTML = '';
-  Object.entries(portMap).forEach(([from, to]) => {
+  Object.entries(portMap).forEach(([n4val, possibles]) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input value="${from}" data-key="${from}" onchange="updateAnyMap(portMap, this)" /></td>
-      <td><input value="${to}" data-val="${to}" onchange="updateAnyMap(portMap, this)" /></td>
-      <td><button class="del-btn" onclick="delete portMap['${from}'];renderPortMaps()">×</button></td>`;
+      <td><input value="${n4val}" data-key="${n4val}" onchange="updateAnyMap(portMap,this)" style="font-weight:600" /></td>
+      <td><input value="${possibles}" onchange="portMap[this.closest('tr').cells[0].querySelector('input').value]=this.value" /></td>
+      <td><button class="del-btn" onclick="delete portMap['${n4val}'];renderPortMaps()">×</button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -1261,8 +1366,8 @@ function updateAnyMap(map, el) {
   const oldKey = row.cells[0].querySelector('input').dataset.key;
   delete map[oldKey]; map[from] = to;
 }
-function addLineRow() { lineMap['NUEVA']='DESTINO'; renderLineMaps(); }
-function addPortRow() { portMap['NUEVO']='DESTINO'; renderPortMaps(); }
+function addLineRow() { lineMap['N4_VALOR']='COMP1, COMP2'; renderLineMaps(); }
+function addPortRow() { portMap['N4_VALOR']='COMP1, COMP2'; renderPortMaps(); }
 
 function renderIsoMap() {
   const tbody = document.getElementById('isoMapBody'); tbody.innerHTML = '';
@@ -1320,7 +1425,7 @@ function exportExcel() {
 
 // ── RESET ──────────────────────────────────────────────────
 function resetAll() {
-  masterFile=null; compFiles=[]; lastResult=null; logEntries=[];
+  masterFile=null; compFiles=[]; lastResult=null; logEntries=[]; rawFileData={};
   updateLogBadge();
   ['masterZone','compZone'].forEach(id => { const el=document.getElementById(id); el.classList.remove('loaded','loaded-b'); });
   document.getElementById('masterTags').innerHTML=''; document.getElementById('compTags').innerHTML='';
