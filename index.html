@@ -249,6 +249,35 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
 .alert-file { font-family: var(--mono); font-size: 11px; font-weight: 700; margin-bottom: 3px; }
 .alert-detail { font-size: 11px; color: var(--gray4); }
 
+/* ── SPINNER OVERLAY ── */
+.spinner-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,37,64,0.55);
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  backdrop-filter: blur(3px);
+}
+.spinner-overlay.active { display: flex; }
+.spinner-ring {
+  width: 52px; height: 52px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.8);
+}
+
 /* ── TOAST ── */
 .toast { position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: var(--white); font-family: var(--mono); font-size: 11px; padding: 10px 18px; border-radius: 5px; transform: translateY(60px); opacity: 0; transition: all 0.25s; z-index: 200; border-left: 3px solid rgba(255,255,255,0.2); pointer-events: none; }
 .toast.show { transform: translateY(0); opacity: 1; }
@@ -489,71 +518,84 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
   </div>
 </div>
 
+<!-- SPINNER OVERLAY -->
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner-ring"></div>
+  <div class="spinner-label" id="spinnerLabel">Cargando...</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ── CONFIG ─────────────────────────────────────────────────
-let masterCols = [
-  { name: 'Unit Nbr',           type: 'key',     enabled: true },
-  { name: 'Line Op',            type: 'compare', enabled: true },
-  { name: 'Booking Number',     type: 'compare', enabled: true },
-  { name: 'Type Arch ISO',      type: 'compare', enabled: true },
-  { name: 'POD',                type: 'compare', enabled: true },
-  { name: 'Frght Kind',         type: 'compare', enabled: true },
-  { name: 'Temp Required (C)',  type: 'compare', enabled: true },
-  { name: 'Humd Req.%',         type: 'compare', enabled: true },
-  { name: 'Vent Req',           type: 'compare', enabled: true },
-  { name: 'IMDG',               type: 'compare', enabled: true },
-  { name: 'Hzd UNNbrs',         type: 'compare', enabled: true },
-  { name: 'O/B Actual Visit',   type: 'vessel',  enabled: true },
-  { name: 'Category',           type: 'meta',    enabled: true },
-];
-let compMap = {
-  'Unit Nbr':           'Container, Cntr, Unit, Box No, Container No, Mark/Number',
-  'Line Op':            'Operator, Carrier, Line, Shipping Line',
-  'Booking Number':     'Bookno, Booking, BK No, Booking Number',
-  'Type Arch ISO':      'Type, Isocode, ISO, ISO Code, Type ISO',
-  'POD':                'Next Discharge, Discharge Port, POD, Dest',
-  'Frght Kind':         'F/E, Full Empty, Load Status',
-  'Temp Required (C)':  'Temp_C, Temperature, Temp, Temp Required, Temp. ºC, Temp °C',
-  'Humd Req.%':         'Humidity, Humd, Humidity %',
-  'Vent Req':           'Ventilation, Vent, Vent Req',
-  'IMDG':               'IMOCLS, IMO Class, IMDG, IMO/UN',
-  'Hzd UNNbrs':         'Hzd UNNbrs, UN Numbers, UN No, UNNO, HazardousUNNbrs',
-};
-// ISO type mapping: N4 value → list of possible comparison values
-let isoMap = {
-  '20DC': '20DC, 20DV, 20G0, 20G1, 22G0, 22G1',
-  '40DC': '40DC, 40DV, 40G0, 40G1, 42G0, 42G1',
-  '40HC': '40HC, 45G0, 45G1, 45HC',
-  '40RH': '40RH, 45R1, 45RE, HREF, 40RE',
-  '20RH': '20RH, 22R1, 22RE',
+// ── DEFAULT CONFIG (used as fallback if JSONBin is empty) ─────────────
+const DEFAULT_CONFIG = {
+  masterCols: [
+    { name: 'Unit Nbr',           type: 'key',     enabled: true },
+    { name: 'Line Op',            type: 'compare', enabled: true },
+    { name: 'Booking Number',     type: 'compare', enabled: true },
+    { name: 'Type Arch ISO',      type: 'compare', enabled: true },
+    { name: 'POD',                type: 'compare', enabled: true },
+    { name: 'Frght Kind',         type: 'compare', enabled: true },
+    { name: 'Temp Required (C)',  type: 'compare', enabled: true },
+    { name: 'Humd Req.%',         type: 'compare', enabled: true },
+    { name: 'Vent Req',           type: 'compare', enabled: true },
+    { name: 'IMDG',               type: 'compare', enabled: true },
+    { name: 'Hzd UNNbrs',         type: 'compare', enabled: true },
+    { name: 'O/B Actual Visit',   type: 'vessel',  enabled: true },
+    { name: 'Category',           type: 'meta',    enabled: true },
+  ],
+  compMap: {
+    'Unit Nbr':           'Container, Cntr, Unit, Box No, Container No, Mark/Number, CntrNo',
+    'Line Op':            'Operator, Carrier, Line, Shipping Line',
+    'Booking Number':     'Bookno, Booking, BK No, Booking Number, BOOKING NBR',
+    'Type Arch ISO':      'Type, Isocode, ISO, ISO Code, Type ISO',
+    'POD':                'Next Discharge, Discharge Port, POD, Dest, FPOD',
+    'Frght Kind':         'F/E, Full Empty, Load Status',
+    'Temp Required (C)':  'Temp_C, Temperature, Temp, Temp Required, Temp. ºC, Temp °C',
+    'Humd Req.%':         'Humidity, Humd, Humidity %',
+    'Vent Req':           'Ventilation, Vent, Vent Req',
+    'IMDG':               'IMOCLS, IMO Class, IMDG, IMO/UN, Class',
+    'Hzd UNNbrs':         'Hzd UNNbrs, UN Numbers, UN No, UNNO, HazardousUNNbrs',
+  },
+  isoMap: {
+    '20DC': '20DC, 20DV, 20G0, 20G1, 22G0, 22G1',
+    '40DC': '40DC, 40DV, 40G0, 40G1, 42G0, 42G1',
+    '40HC': '40HC, 45G0, 45G1, 45HC',
+    '40RH': '40RH, 45R1, 45RE, HREF, 40RE',
+    '20RH': '20RH, 22R1, 22RE',
+  },
+  reeferClean: {
+    'Temp Required (C)': ['ºC','°C','N/A','NA','n/a','SET','set'],
+    'Humd Req.%':        ['%','N/A','NA','n/a'],
+    'Vent Req':          ['N/A','NA','n/a','CBM','cbm'],
+  },
+  lineMap: {
+    'MAERS': 'MSK, MAERSK, MAERS',
+    'CMA':   'CMA, CMACGM, CMA CGM',
+    'HAPAG': 'HAPAG, HAPAGLLOYD, HAPAG-LLOYD',
+    'ONE':   'ONE',
+    'EVERGREEN': 'EVERGREEN, EMC',
+    'COSCO': 'COSCO, COS',
+    'MSC':   'MSC',
+  },
+  portMap: {
+    'BRSSZ': 'BRSSZBT, BRSSZ',
+    'MAPTM': 'MAPTMTM, MAPTM',
+    'ARBUE': 'ARBUEAR, ARBUE',
+    'DEHAM': 'DEHAMEK, DEHAM',
+    'DEBRV': 'DEBRVTM, DEBRV',
+    'BEANR': 'BEANT913, BEANR',
+  },
 };
 
-// Reefer field cleaning: chars/strings to strip before normalizing
-let reeferClean = {
-  'Temp Required (C)': ['ºC', '°C', 'N/A', 'NA', 'n/a', 'SET', 'set'],
-  'Humd Req.%':        ['%', 'N/A', 'NA', 'n/a'],
-  'Vent Req':          ['N/A', 'NA', 'n/a', 'CBM', 'cbm'],
-};
-
-let lineMap = {
-  'MAERS': 'MSK, MAERSK, MAERS',
-  'CMA':   'CMA, CMACGM, CMA CGM',
-  'HAPAG': 'HAPAG, HAPAGLLOYD, HAPAG-LLOYD',
-  'ONE':   'ONE',
-  'EVERGREEN': 'EVERGREEN, EMC',
-  'COSCO': 'COSCO, COS',
-  'MSC':   'MSC',
-};
-let portMap = {
-  'BRSSZ': 'BRSSZBT, BRSSZ',
-  'MAPTM': 'MAPTMTM, MAPTM',
-  'ARBUE': 'ARBUEAR, ARBUE',
-  'DEHAM': 'DEHAMEK, DEHAM',
-  'DEBRV': 'DEBRVTM, DEBRV',
-  'BEANR': 'BEANT913, BEANR',
-};
+// Active config — starts empty, loaded from JSONBin on boot
+let masterCols = [];
+let compMap    = {};
+let isoMap     = {};
+let reeferClean = {};
+let lineMap    = {};
+let portMap    = {};
 
 // ── STATE ──────────────────────────────────────────────────
 let masterFile = null, compFiles = [], lastResult = null;
@@ -915,6 +957,7 @@ let perFileFieldToggles = {}; // { filename: { fieldName: true/false } }
 async function runComparison() {
   const btn = document.getElementById('runBtn');
   btn.disabled = true; btn.textContent = 'Analizando...';
+  showSpinner('Leyendo archivos...');
   logEntries = []; updateLogBadge();
 
   try {
@@ -1039,6 +1082,7 @@ async function confirmCompare() {
   closePrecompare();
   const btn = document.getElementById('runBtn');
   btn.disabled = true; btn.textContent = 'Procesando...';
+  showSpinner('Comparando datos...');
   logEntries = []; updateLogBadge();
   const warnings = [], errors = [];
 
@@ -1517,6 +1561,7 @@ const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 async function loadConfig() {
   const syncEl = document.getElementById('syncStatus');
+  showSpinner('Cargando configuración...');
   try {
     syncEl.textContent = '↻ Sincronizando...';
     const res = await fetch(BIN_URL + '/latest', {
@@ -1524,28 +1569,40 @@ async function loadConfig() {
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const cfg = await res.json();
-    if (cfg.masterCols && cfg.masterCols.length) masterCols = cfg.masterCols;
-    if (cfg.compMap && Object.keys(cfg.compMap).length) compMap = cfg.compMap;
-    if (cfg.lineMap && Object.keys(cfg.lineMap).length) lineMap = cfg.lineMap;
-    if (cfg.portMap && Object.keys(cfg.portMap).length) portMap = cfg.portMap;
-    if (cfg.isoMap && Object.keys(cfg.isoMap).length) isoMap = cfg.isoMap;
-    if (cfg.reeferClean && Object.keys(cfg.reeferClean).length) reeferClean = cfg.reeferClean;
+
+    // Only use JSONBin data — NEVER fall back to hardcoded defaults if JSONBin responds
+    masterCols  = (cfg.masterCols && cfg.masterCols.length)          ? cfg.masterCols  : DEFAULT_CONFIG.masterCols;
+    compMap     = (cfg.compMap    && Object.keys(cfg.compMap).length) ? cfg.compMap    : DEFAULT_CONFIG.compMap;
+    lineMap     = (cfg.lineMap    && Object.keys(cfg.lineMap).length) ? cfg.lineMap    : DEFAULT_CONFIG.lineMap;
+    portMap     = (cfg.portMap    && Object.keys(cfg.portMap).length) ? cfg.portMap    : DEFAULT_CONFIG.portMap;
+    isoMap      = (cfg.isoMap     && Object.keys(cfg.isoMap).length)  ? cfg.isoMap     : DEFAULT_CONFIG.isoMap;
+    reeferClean = (cfg.reeferClean && Object.keys(cfg.reeferClean).length) ? cfg.reeferClean : DEFAULT_CONFIG.reeferClean;
+
     syncEl.textContent = '✓ Config sincronizada';
     syncEl.style.color = 'var(--green)';
     setTimeout(() => { syncEl.textContent = ''; syncEl.style.color = ''; }, 3000);
   } catch(err) {
-    syncEl.textContent = '⚠ Config local';
+    // JSONBin unreachable — use defaults
+    masterCols  = DEFAULT_CONFIG.masterCols;
+    compMap     = DEFAULT_CONFIG.compMap;
+    lineMap     = DEFAULT_CONFIG.lineMap;
+    portMap     = DEFAULT_CONFIG.portMap;
+    isoMap      = DEFAULT_CONFIG.isoMap;
+    reeferClean = DEFAULT_CONFIG.reeferClean;
+    syncEl.textContent = '⚠ Sin conexión — usando config local';
     syncEl.style.color = 'var(--amber)';
     console.warn('JSONBin load error:', err);
   }
   renderMasterCols(); renderCompMap(); renderLineMaps(); renderPortMaps();
   renderIsoMap(); renderReeferClean();
+  hideSpinner();
 }
 
 async function saveConfig() {
   const syncEl = document.getElementById('syncStatus');
   const saveBtn = document.getElementById('saveConfigBtn');
   saveBtn.disabled = true; saveBtn.textContent = 'Guardando...';
+  showSpinner('Guardando configuración...');
   try {
     const cfg = { masterCols, compMap, lineMap, portMap, isoMap, reeferClean };
     const res = await fetch(BIN_URL, {
@@ -1562,6 +1619,16 @@ async function saveConfig() {
     toast('Error al guardar: ' + err.message, 'error');
   }
   saveBtn.disabled = false; saveBtn.textContent = '↑ Guardar config';
+  hideSpinner();
+}
+
+// ── SPINNER ────────────────────────────────────────────────────
+function showSpinner(label) {
+  document.getElementById('spinnerLabel').textContent = label || 'Cargando...';
+  document.getElementById('spinnerOverlay').classList.add('active');
+}
+function hideSpinner() {
+  document.getElementById('spinnerOverlay').classList.remove('active');
 }
 
 // ── TOAST ──────────────────────────────────────────────────
