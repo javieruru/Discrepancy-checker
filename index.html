@@ -734,9 +734,9 @@ function checkReady() { document.getElementById('runBtn').disabled = !(masterFil
 // ── PARSE ──────────────────────────────────────────────────
 function getCompPossibleNames() {
   const names = [];
-  Object.values(compMap).forEach(v => v.split(',').forEach(s => { const t=s.trim().toUpperCase(); if(t) names.push(t); }));
-  // Also add the master col names themselves uppercased
-  masterCols.forEach(c => names.push(c.name.toUpperCase()));
+  Object.values(compMap).forEach(v => v.split(',').forEach(s => { const t=s.trim().toLowerCase(); if(t) names.push(t); }));
+  // Also add master col names in lowercase
+  masterCols.forEach(c => names.push(c.name.toLowerCase()));
   return [...new Set(names)];
 }
 
@@ -746,24 +746,31 @@ async function parseXLSX(file) {
     reader.onload = e => {
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
-        // Build anchors in uppercase for case-insensitive header matching
-        const ANCHORS = ['UNIT NBR', ...getCompPossibleNames().map(s => s.toUpperCase())];
+        // Build anchors in lowercase for case-insensitive header matching
+        const ANCHORS = ['unit nbr', ...getCompPossibleNames().map(s => s.toLowerCase())];
         let data = [], foundSheet = null, foundHeaderRow = -1;
 
         for (const name of wb.SheetNames) {
           const ws = wb.Sheets[name];
           const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
           for (let i = 0; i < Math.min(raw.length, 15); i++) {
-            // Normalize cells to uppercase for matching
-            const cells = raw[i].map(c => String(c).trim().toUpperCase());
+            // Normalize cells to lowercase for matching
+            const cells = raw[i].map(c => String(c).trim().toLowerCase());
             if (ANCHORS.some(k => cells.includes(k))) {
               foundSheet = name; foundHeaderRow = i;
-              // Store headers in uppercase
+              // Store headers in lowercase internally
               const headers = cells;
               data = [];
               for (let j = i+1; j < raw.length; j++) {
                 if (raw[j].every(c => c===''||c===null||c===undefined)) continue;
-                const obj = {}; headers.forEach((h,k) => { if(h) obj[h] = raw[j][k] ?? ''; }); data.push(obj);
+                // Store values in lowercase too
+                const obj = {};
+                headers.forEach((h,k) => {
+                  if(h) obj[h] = raw[j][k] !== undefined && raw[j][k] !== null
+                    ? String(raw[j][k]).trim().toLowerCase()
+                    : '';
+                });
+                data.push(obj);
               }
               break;
             }
@@ -791,8 +798,8 @@ const clean = v => (v ?? '').toString().trim();
 const cleanKey = v => clean(v).replace(/\s+/g,'').toUpperCase();
 
 function resolveCompVal(row, masterColName) {
-  // Try possibles in uppercase (headers are normalized to uppercase)
-  const possibles = (compMap[masterColName] || masterColName).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  // Headers and values are stored in lowercase — search in lowercase
+  const possibles = (compMap[masterColName] || masterColName).split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   for (const p of possibles) {
     if (row[p] !== undefined && String(row[p]).trim() !== '') return String(row[p]);
   }
@@ -801,15 +808,15 @@ function resolveCompVal(row, masterColName) {
 function resolveCompKey(row) {
   const col = masterCols.find(c => c.type === 'key');
   if (!col) return '';
-  // Also try the key column name in uppercase directly
-  const keyName = col.name.toUpperCase();
+  // Headers stored in lowercase
+  const keyName = col.name.toLowerCase();
   if (row[keyName] !== undefined && String(row[keyName]).trim() !== '') {
     return cleanKey(String(row[keyName]));
   }
   return cleanKey(resolveCompVal(row, col.name));
 }
 function normalizeOp(v) {
-  const cv = cleanKey(v);
+  const cv = clean(v).toUpperCase().replace(/\s+/g,'');
   for (const [n4val, possibles] of Object.entries(lineMap)) {
     const list = possibles.split(',').map(s => s.trim().toUpperCase().replace(/\s+/g,''));
     if (list.includes(cv)) return n4val.toUpperCase();
@@ -817,7 +824,7 @@ function normalizeOp(v) {
   return cv;
 }
 function normalizePort(v) {
-  const cv = cleanKey(v);
+  const cv = clean(v).toUpperCase().replace(/\s+/g,'');
   for (const [n4val, possibles] of Object.entries(portMap)) {
     const list = possibles.split(',').map(s => s.trim().toUpperCase().replace(/\s+/g,''));
     if (list.includes(cv)) return n4val.toUpperCase();
@@ -860,10 +867,9 @@ function normalizeReeferNum(col, v) {
 
 function normalizeISO(v) {
   const cv = clean(v).toUpperCase().replace(/\s+/g,'');
-  // Check if this comp value matches any isoMap entry
   for (const [n4val, possibles] of Object.entries(isoMap)) {
-    const list = possibles.split(',').map(s=>s.trim().toUpperCase());
-    if (list.includes(cv)) return n4val;
+    const list = possibles.split(',').map(s=>s.trim().toUpperCase().replace(/\s+/g,''));
+    if (list.includes(cv)) return n4val.toUpperCase();
   }
   return cv;
 }
@@ -889,8 +895,8 @@ function normComp(col, val) {
   return clean(val);
 }
 function normMaster(col, val) {
-  if (col==='Line Op') return clean(val).toUpperCase().replace(/\s+/g,'');
-  if (col==='POD') return clean(val).toUpperCase().replace(/\s+/g,'');
+  if (col==='Line Op') return normalizeOp(val);
+  if (col==='POD') return normalizePort(val);
   if (col==='Type Arch ISO') return clean(val).toUpperCase().replace(/\s+/g,'');
   if (col==='Temp Required (C)') return normalizeTemp(col, val);
   if (col==='Humd Req.%') return normalizeReeferNum(col, val);
@@ -951,9 +957,9 @@ function buildPrecompareToggles() {
   parsedCompArrays.forEach(({ file, data }) => {
     perFileFieldToggles[file.name] = {};
     activeCols.forEach(col => {
-      const possibles = (compMap[col.name] || col.name).split(',').map(s => s.trim()).filter(Boolean);
+      const possibles = (compMap[col.name] || col.name).split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
       const found = data.length > 0 && possibles.some(p => data[0][p] !== undefined);
-      perFileFieldToggles[file.name][col.name] = found; // auto: on if found, off if not
+      perFileFieldToggles[file.name][col.name] = found;
     });
   });
 }
@@ -1041,9 +1047,10 @@ async function confirmCompare() {
 
     // Validate master
     const keyCol = masterCols.find(c => c.type === 'key');
-    const hasKey = masterData.length && masterData[0][keyCol?.name] !== undefined;
+    const keyNameLower = keyCol?.name?.toLowerCase() || '';
+    const hasKey = masterData.length && (masterData[0][keyNameLower] !== undefined || masterData[0][keyCol?.name] !== undefined);
     if (!hasKey) {
-      addLog('warn', masterFile.name, `Columna clave "${keyCol?.name}" no encontrada`, `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}`);
+      addLog('warn', masterFile.name, `Columna clave "${keyCol?.name}" no encontrada`, `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ').toUpperCase()}`);
       warnings.push({ file: masterFile.name, msg: `Columna clave "${keyCol?.name}" no encontrada`, detail: `Headers: ${Object.keys(masterData[0]||{}).slice(0,8).join(', ')}` });
     } else {
       rawFileData[masterFile.name] = { data: masterData };
@@ -1059,8 +1066,8 @@ async function confirmCompare() {
         compDataArrays.push({ fileName: file.name, data: [], fieldToggles: {} });
         continue;
       }
-      const keyPossibles = (compMap[keyCol?.name]||'').split(',').map(s=>s.trim());
-      const foundKey = data.length && keyPossibles.some(p => data[0][p] !== undefined);
+      const keyPossibles = (compMap[keyCol?.name]||'').split(',').map(s=>s.trim().toLowerCase());
+      const foundKey = data.length && keyPossibles.some(p => data[0][p] !== undefined && String(data[0][p]).trim() !== '');
       if (!foundKey && data.length) {
         warnings.push({ file: file.name, msg: 'Columna clave no encontrada', detail: `Buscado: ${keyPossibles.join(', ')} · Headers: ${Object.keys(data[0]).slice(0,8).join(', ')}` });
         addLog('warn', file.name, 'Columna clave no encontrada', `Buscado: ${keyPossibles.join(', ')}`);
@@ -1069,7 +1076,7 @@ async function confirmCompare() {
         const activeCols = masterCols.filter(c => c.type === 'compare' && c.enabled !== false);
         const missingCols = [];
         activeCols.forEach(col => {
-          const poss = (compMap[col.name]||col.name).split(',').map(s=>s.trim());
+          const poss = (compMap[col.name]||col.name).split(',').map(s=>s.trim().toLowerCase());
           const found = data.length && poss.some(p => data[0][p] !== undefined);
           if (!found) missingCols.push(col.name);
         });
@@ -1149,7 +1156,9 @@ function doCompare(masterData, compData, compDataArrays) {
   const disc = [], dups = [];
 
   for (const row of masterData) {
-    const cntr = cleanKey(row[keyCol?.name]||''); if (!cntr) continue;
+    const keyName = keyCol?.name?.toLowerCase() || '';
+    const cntr = cleanKey(row[keyName] || row[keyCol?.name] || '');
+    if (!cntr) continue;
     if (mLookup[cntr]) dups.push({ container:cntr, type:'duplicate_in_n4', field:'-', masterValue:'-', compValue:'-' });
     mLookup[cntr] = row;
   }
@@ -1170,7 +1179,11 @@ function doCompare(masterData, compData, compDataArrays) {
   }
 
   let vesselName = 'Unknown';
-  for (const row of masterData) { const v=clean(row[vesselCol?.name]||''); if(v){vesselName=v;break;} }
+  for (const row of masterData) {
+    const vk = vesselCol?.name?.toLowerCase() || '';
+    const v = clean(row[vk] || row[vesselCol?.name] || '');
+    if(v){ vesselName=v.toUpperCase(); break; }
+  }
 
   for (const cntr of Object.keys(cLookup)) {
     const cr=cLookup[cntr], mr=mLookup[cntr];
@@ -1178,10 +1191,12 @@ function doCompare(masterData, compData, compDataArrays) {
     const fileToggles = containerFileMap[cntr] || {};
     for (const col of compareCols) {
       const mf = col.name;
+      const mfLower = mf.toLowerCase();
       // Skip if toggled off for this specific file
       if (fileToggles[mf] === false) continue;
-      if (mf === 'Booking Number' && clean(mr['Category']) !== 'Export') continue;
-      const mv = normMaster(mf, mr[mf]);
+      const category = clean(mr['category'] || mr['Category'] || '');
+      if (mf === 'Booking Number' && category.toLowerCase() !== 'export') continue;
+      const mv = normMaster(mf, mr[mfLower] !== undefined ? mr[mfLower] : (mr[mf] || ''));
       const cv = normComp(mf, resolveCompVal(cr, mf));
       if (!cv && !mv) continue;
       if (cv !== mv) disc.push({ container:cntr, type:'value_mismatch', field:mf, masterValue:mv, compValue:cv });
@@ -1202,7 +1217,7 @@ function doCompare(masterData, compData, compDataArrays) {
   const allCntrs = new Set([...Object.keys(mLookup), ...Object.keys(cLookup)]);
   allCntrs.forEach(cntr => {
     const masterRow = mLookup[cntr] || {};
-    const lineOp = clean(masterRow['Line Op'] || '');
+    const lineOp = clean(masterRow['line op'] || masterRow['Line Op'] || '');
     allContainers.push({
       container: cntr.toUpperCase(),
       lineOp,
@@ -1282,7 +1297,7 @@ function buildTable(allContainers, filter) {
         <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
         <td><span class="type-badge" style="background:rgba(22,163,74,0.1);color:#16a34a;border:1px solid rgba(22,163,74,0.2)">OK</span></td>
         <td class="cntr-cell">${c.container.toUpperCase()}</td>
-        <td style="font-size:11px;color:var(--gray4)">${c.lineOp}</td>
+        <td style="font-size:11px;color:var(--gray4)">${c.lineOp.toUpperCase()}</td>
         <td style="font-size:10px;color:var(--gray4);font-family:var(--mono);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${c.sourceFile}">${shortFile}</td>
         <td></td><td></td><td></td><td></td>
       </tr>`);
@@ -1299,12 +1314,12 @@ function buildTable(allContainers, filter) {
           <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
           <td></td>
           <td class="cntr-cell">${isFirst||!isMulti?c.container.toUpperCase():`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
-          <td style="font-size:11px;color:var(--gray4)">${isFirst||!isMulti?c.lineOp:''}</td>
+          <td style="font-size:11px;color:var(--gray4)">${isFirst||!isMulti?c.lineOp.toUpperCase():''}</td>
           <td style="font-size:10px;color:var(--gray4);font-family:var(--mono);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${c.sourceFile||''}">${sf}</td>
           <td><span class="type-badge ${TC[d.type]||''}">${TL[d.type]||d.type}</span></td>
           <td style="color:var(--gray4);font-size:12px">${d.field!=='-'?d.field:''}</td>
-          <td>${d.masterValue!=='-'?`<span class="val-m">${d.masterValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
-          <td>${d.compValue!=='-'?`<span class="val-c">${d.compValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
+          <td>${d.masterValue!=='-'?`<span class="val-m">${String(d.masterValue).toUpperCase()}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
+          <td>${d.compValue!=='-'?`<span class="val-c">${String(d.compValue).toUpperCase()}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
         </tr>`);
       });
     }
