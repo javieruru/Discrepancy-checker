@@ -162,6 +162,7 @@ tbody td { padding: 9px 16px; font-size: 12px; white-space: nowrap; vertical-ali
 .log-section-title:first-child { margin-top: 0; }
 .log-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 5px; margin-bottom: 6px; font-size: 12px; line-height: 1.5; transition: opacity 0.15s; }
 .log-item[onclick]:hover { opacity: 0.8; }
+.log-inline-table { border-radius: 0 0 5px 5px; margin-top: -6px; margin-bottom: 6px; background: var(--white); border: 1px solid var(--gray2); border-top: none; }
 .log-item.ok { background: var(--green-dim); border: 1px solid rgba(22,163,74,0.15); }
 .log-item.warn { background: var(--amber-dim); border: 1px solid rgba(217,119,6,0.15); }
 .log-item.error { background: var(--red-dim); border: 1px solid rgba(227,6,19,0.15); }
@@ -451,21 +452,6 @@ footer { background: var(--white); border-top: 1px solid var(--gray2); padding: 
   </div>
 </div>
 
-<!-- FILE DETAIL MODAL -->
-<div class="modal-overlay" id="fileDetailModal" onclick="if(event.target===this)closeFileDetail()">
-  <div class="modal" style="width:900px;max-width:96vw">
-    <div class="modal-header">
-      <span class="modal-header-icon">📄</span>
-      <div class="modal-title" id="fileDetailTitle">Detalle de archivo</div>
-      <button class="modal-close" onclick="closeFileDetail()">×</button>
-    </div>
-    <div class="modal-body" style="padding:0">
-      <div style="overflow-x:auto;overflow-y:auto;max-height:65vh">
-        <div id="fileDetailBody"></div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- INFO MODAL -->
 <div class="modal-overlay" id="infoModal" onclick="if(event.target===this)closeInfoModal()">
@@ -602,11 +588,11 @@ function renderLog() {
 
   const makeItem = (e, icon, clickable) => {
     const hasData = rawFileData[e.file] && rawFileData[e.file].data && rawFileData[e.file].data.length;
-    const clickAttr = (clickable && hasData) ? `onclick="openFileDetail('${e.file.replace(/'/g,"\'")}')" style="cursor:pointer"` : '';
-    const hint = (clickable && hasData) ? `<span style="font-size:10px;color:var(--navy);font-family:var(--mono);margin-left:6px">↗ ver datos</span>` : '';
-    return `<div class="log-item ${e.type}" ${clickAttr}>
+    const clickAttr = (clickable && hasData) ? `onclick="openFileDetail('${e.file.replace(/'/g,"\'")}') data-file="${e.file.replace(/"/g,'&quot;')}"` : '';
+    const hint = (clickable && hasData) ? `<span class="log-expand-icon" style="font-size:10px;color:var(--navy);font-family:var(--mono);margin-left:6px">↗</span>` : '';
+    return `<div class="log-item ${e.type}"${clickable && hasData ? ` onclick="openFileDetail('${e.file.replace(/'/g,"\'")}');" data-file="${e.file.replace(/"/g,'&quot;')}" style="cursor:pointer"` : ''}>
       <span class="log-icon">${icon}</span>
-      <div class="log-msg">
+      <div class="log-msg" style="flex:1">
         <div class="log-file">${e.file}${hint}</div>
         <div>${e.message}</div>
         ${e.detail?`<div class="log-detail">${e.detail}</div>`:''}
@@ -631,40 +617,56 @@ function renderLog() {
   area.innerHTML = html;
 }
 
+function buildFileTable(data) {
+  if (!data || !data.length) return '<div style="padding:16px;color:var(--gray4);font-size:12px">Sin datos</div>';
+  const headers = Object.keys(data[0]);
+  return `<div style="overflow-x:auto;overflow-y:auto;max-height:400px;border-top:1px solid var(--gray2)">
+    <table style="width:100%;border-collapse:collapse;min-width:600px">
+      <thead><tr style="background:var(--gray1);position:sticky;top:0;z-index:2">
+        <th style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray4);padding:10px 14px;border-bottom:1px solid var(--gray2);white-space:nowrap;text-align:left">#</th>
+        ${headers.map(h=>`<th style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray4);padding:10px 14px;border-bottom:1px solid var(--gray2);white-space:nowrap;text-align:left">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${data.map((row,i)=>`<tr style="border-bottom:1px solid var(--gray2)">
+          <td style="padding:8px 14px;font-size:11px;color:var(--gray3);font-family:var(--mono)">${i+1}</td>
+          ${headers.map(h=>{const v=row[h]!==undefined&&String(row[h]).trim()!==''?String(row[h]):'';return `<td style="padding:8px 14px;font-size:12px;color:var(--gray5);white-space:nowrap">${v||'<span style="color:var(--gray3)">—</span>'}</td>`;}).join('')}
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
 function openFileDetail(fileName) {
   const store = rawFileData[fileName];
   if (!store || !store.data || !store.data.length) {
     toast('No hay datos disponibles para este archivo', 'error');
     return;
   }
-  const data = store.data;
-  const headers = Object.keys(data[0]);
-  document.getElementById('fileDetailTitle').textContent = fileName + ` — ${data.length} containers`;
-
-  // Build table
-  let html = `<table style="width:100%;border-collapse:collapse;min-width:600px">
-    <thead><tr style="background:var(--gray1);position:sticky;top:0;z-index:2">
-      <th style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray4);padding:10px 14px;border-bottom:1px solid var(--gray2);white-space:nowrap;text-align:left">#</th>
-      ${headers.map(h => `<th style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray4);padding:10px 14px;border-bottom:1px solid var(--gray2);white-space:nowrap;text-align:left">${h}</th>`).join('')}
-    </tr></thead>
-    <tbody>
-      ${data.map((row, i) => `<tr style="border-bottom:1px solid var(--gray2)">
-        <td style="padding:8px 14px;font-size:11px;color:var(--gray3);font-family:var(--mono)">${i+1}</td>
-        ${headers.map(h => {
-          const val = row[h] !== undefined && row[h] !== '' ? String(row[h]) : '';
-          return `<td style="padding:8px 14px;font-size:12px;color:var(--gray5);white-space:nowrap">${val || '<span style="color:var(--gray3)">—</span>'}</td>`;
-        }).join('')}
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-
-  document.getElementById('fileDetailBody').innerHTML = html;
-  document.getElementById('fileDetailModal').classList.add('open');
+  // Find the log item and toggle inline table
+  const allItems = document.querySelectorAll('.log-item[data-file]');
+  allItems.forEach(el => {
+    if (el.dataset.file === fileName) {
+      const existing = el.nextElementSibling;
+      if (existing && existing.classList.contains('log-inline-table')) {
+        existing.remove();
+        el.querySelector('.log-expand-icon').textContent = '↗';
+      } else {
+        // Remove any other open tables
+        document.querySelectorAll('.log-inline-table').forEach(t => {
+          t.previousElementSibling.querySelector('.log-expand-icon').textContent = '↗';
+          t.remove();
+        });
+        const div = document.createElement('div');
+        div.className = 'log-inline-table';
+        div.innerHTML = buildFileTable(store.data);
+        el.insertAdjacentElement('afterend', div);
+        el.querySelector('.log-expand-icon').textContent = '↙';
+      }
+    }
+  });
 }
 
-function closeFileDetail() {
-  document.getElementById('fileDetailModal').classList.remove('open');
-}
+function closeFileDetail() {}
 
 // ── NAV ────────────────────────────────────────────────────
 const secTitles = { archivos:'Archivos', resumen:'Resumen', log:'Log', config:'Configuración' };
@@ -732,7 +734,9 @@ function checkReady() { document.getElementById('runBtn').disabled = !(masterFil
 // ── PARSE ──────────────────────────────────────────────────
 function getCompPossibleNames() {
   const names = [];
-  Object.values(compMap).forEach(v => v.split(',').forEach(s => { const t=s.trim(); if(t) names.push(t); }));
+  Object.values(compMap).forEach(v => v.split(',').forEach(s => { const t=s.trim().toUpperCase(); if(t) names.push(t); }));
+  // Also add the master col names themselves uppercased
+  masterCols.forEach(c => names.push(c.name.toUpperCase()));
   return [...new Set(names)];
 }
 
@@ -742,16 +746,19 @@ async function parseXLSX(file) {
     reader.onload = e => {
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
-        const ANCHORS = ['Unit Nbr', ...getCompPossibleNames()];
+        // Build anchors in uppercase for case-insensitive header matching
+        const ANCHORS = ['UNIT NBR', ...getCompPossibleNames().map(s => s.toUpperCase())];
         let data = [], foundSheet = null, foundHeaderRow = -1;
 
         for (const name of wb.SheetNames) {
           const ws = wb.Sheets[name];
           const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
           for (let i = 0; i < Math.min(raw.length, 15); i++) {
-            const cells = raw[i].map(c => String(c).trim());
+            // Normalize cells to uppercase for matching
+            const cells = raw[i].map(c => String(c).trim().toUpperCase());
             if (ANCHORS.some(k => cells.includes(k))) {
               foundSheet = name; foundHeaderRow = i;
+              // Store headers in uppercase
               const headers = cells;
               data = [];
               for (let j = i+1; j < raw.length; j++) {
@@ -784,13 +791,21 @@ const clean = v => (v ?? '').toString().trim();
 const cleanKey = v => clean(v).replace(/\s+/g,'').toUpperCase();
 
 function resolveCompVal(row, masterColName) {
-  const possibles = (compMap[masterColName] || masterColName).split(',').map(s => s.trim()).filter(Boolean);
-  for (const p of possibles) { if (row[p] !== undefined && row[p] !== '') return String(row[p]); }
+  // Try possibles in uppercase (headers are normalized to uppercase)
+  const possibles = (compMap[masterColName] || masterColName).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  for (const p of possibles) {
+    if (row[p] !== undefined && String(row[p]).trim() !== '') return String(row[p]);
+  }
   return '';
 }
 function resolveCompKey(row) {
   const col = masterCols.find(c => c.type === 'key');
   if (!col) return '';
+  // Also try the key column name in uppercase directly
+  const keyName = col.name.toUpperCase();
+  if (row[keyName] !== undefined && String(row[keyName]).trim() !== '') {
+    return cleanKey(String(row[keyName]));
+  }
   return cleanKey(resolveCompVal(row, col.name));
 }
 function normalizeOp(v) {
@@ -1143,6 +1158,16 @@ function doCompare(masterData, compData, compDataArrays) {
     if (cLookup[cntr]) dups.push({ container:cntr, type:'duplicate_in_comparison', field:'-', masterValue:'-', compValue:'-' });
     cLookup[cntr] = row;
   }
+  // Build container→fileName map
+  const containerFileMap2 = {};
+  if (compDataArrays) {
+    compDataArrays.forEach(({ fileName, data }) => {
+      data.forEach(row => {
+        const cntr = resolveCompKey(row);
+        if (cntr) containerFileMap2[cntr] = fileName;
+      });
+    });
+  }
 
   let vesselName = 'Unknown';
   for (const row of masterData) { const v=clean(row[vesselCol?.name]||''); if(v){vesselName=v;break;} }
@@ -1179,8 +1204,9 @@ function doCompare(masterData, compData, compDataArrays) {
     const masterRow = mLookup[cntr] || {};
     const lineOp = clean(masterRow['Line Op'] || '');
     allContainers.push({
-      container: cntr,
+      container: cntr.toUpperCase(),
       lineOp,
+      sourceFile: containerFileMap2[cntr] || '',
       discrepancies: discByContainer[cntr] || [],
       status: discByContainer[cntr] ? 'disc' : 'ok',
       inMaster: !!mLookup[cntr],
@@ -1251,11 +1277,13 @@ function buildTable(allContainers, filter) {
   containers.forEach(c => {
     if (c.status === 'ok') {
       n++;
+      const shortFile = c.sourceFile ? c.sourceFile.replace(/\.xlsx?$|\.xlsm$/i,'') : '';
       rows.push(`<tr>
         <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
         <td><span class="type-badge" style="background:rgba(22,163,74,0.1);color:#16a34a;border:1px solid rgba(22,163,74,0.2)">OK</span></td>
-        <td class="cntr-cell">${c.container}</td>
+        <td class="cntr-cell">${c.container.toUpperCase()}</td>
         <td style="font-size:11px;color:var(--gray4)">${c.lineOp}</td>
+        <td style="font-size:10px;color:var(--gray4);font-family:var(--mono);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${c.sourceFile}">${shortFile}</td>
         <td></td><td></td><td></td><td></td>
       </tr>`);
     } else {
@@ -1266,11 +1294,13 @@ function buildTable(allContainers, filter) {
         const isMulti = disc.length > 1;
         const lc = isMulti ? GL[d.type]||'' : '';
         const pl = isMulti ? 'pl-e' : '';
+        const sf = (isFirst||!isMulti) ? (c.sourceFile||'').replace(/\.xlsx?$|\.xlsm$/i,'') : '';
         rows.push(`<tr class="${lc} ${pl}">
           <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
           <td></td>
-          <td class="cntr-cell">${isFirst||!isMulti?c.container:`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
+          <td class="cntr-cell">${isFirst||!isMulti?c.container.toUpperCase():`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
           <td style="font-size:11px;color:var(--gray4)">${isFirst||!isMulti?c.lineOp:''}</td>
+          <td style="font-size:10px;color:var(--gray4);font-family:var(--mono);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${c.sourceFile||''}">${sf}</td>
           <td><span class="type-badge ${TC[d.type]||''}">${TL[d.type]||d.type}</span></td>
           <td style="color:var(--gray4);font-size:12px">${d.field!=='-'?d.field:''}</td>
           <td>${d.masterValue!=='-'?`<span class="val-m">${d.masterValue}</span>`:'<span style="color:var(--gray3)">—</span>'}</td>
@@ -1281,7 +1311,7 @@ function buildTable(allContainers, filter) {
   });
 
   return `<table>
-    <thead><tr><th>#</th><th>Estado</th><th>Container</th><th>Line Op</th><th>Tipo</th><th>Campo</th><th>Navis N4</th><th>Comparison</th></tr></thead>
+    <thead><tr><th>#</th><th>Estado</th><th>Container</th><th>Line Op</th><th>Archivo</th><th>Tipo</th><th>Campo</th><th>Navis N4</th><th>Comparison</th></tr></thead>
     <tbody>${rows.join('')}</tbody></table>`;
 }
 
