@@ -788,7 +788,7 @@ async function parseXLSX(file) {
     reader.onload = e => {
       try {
         const wb = XLSX.read(e.target.result, { type: 'array' });
-        // Build anchors in lowercase for case-insensitive header matching
+        // Build anchors for case-insensitive header matching
         const ANCHORS = ['unit nbr', ...getCompPossibleNames().map(s => s.toLowerCase())];
         let data = [], foundSheet = null, foundHeaderRow = -1;
 
@@ -796,20 +796,20 @@ async function parseXLSX(file) {
           const ws = wb.Sheets[name];
           const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
           for (let i = 0; i < Math.min(raw.length, 15); i++) {
-            // Normalize cells to lowercase for matching
+            // Only lowercase header row for matching — NOT the data
             const cells = raw[i].map(c => String(c).trim().toLowerCase());
             if (ANCHORS.some(k => cells.includes(k))) {
               foundSheet = name; foundHeaderRow = i;
-              // Store headers in lowercase internally
+              // Store headers in lowercase for consistent lookup
               const headers = cells;
               data = [];
               for (let j = i+1; j < raw.length; j++) {
                 if (raw[j].every(c => c===''||c===null||c===undefined)) continue;
-                // Store values in lowercase too
+                // Store values AS-IS — normalization happens at compare time
                 const obj = {};
                 headers.forEach((h,k) => {
                   if(h) obj[h] = raw[j][k] !== undefined && raw[j][k] !== null
-                    ? String(raw[j][k]).trim().toLowerCase()
+                    ? String(raw[j][k]).trim()
                     : '';
                 });
                 data.push(obj);
@@ -919,10 +919,9 @@ function normalizeISO(v) {
 function normalizeFE(v) { const lv=clean(v).toLowerCase(); if(['full','fcl','f'].includes(lv)) return 'FCL'; if(['empty','e','mt','mty'].includes(lv)) return 'Empty'; return clean(v); }
 
 function normalizeList(v) {
-  // Normalize comma-separated lists: sort, trim, uppercase each item
   const s = clean(v);
   if (!s) return '';
-  return s.split(/[,;\/]/).map(x => x.trim().toUpperCase()).filter(Boolean).sort().join(',');
+  return s.split(/[,;/]/).map(x => x.trim().toUpperCase()).filter(Boolean).sort().join(',');
 }
 
 function normComp(col, val) {
@@ -1226,7 +1225,7 @@ function doCompare(masterData, compData, compDataArrays) {
   for (const row of masterData) {
     const vk = vesselCol?.name?.toLowerCase() || '';
     const v = clean(row[vk] || row[vesselCol?.name] || '');
-    if(v){ vesselName=v.toUpperCase(); break; }
+    if(v){ vesselName = v.toUpperCase(); break; }
   }
 
   for (const cntr of Object.keys(cLookup)) {
@@ -1261,7 +1260,7 @@ function doCompare(masterData, compData, compDataArrays) {
   const allCntrs = new Set([...Object.keys(mLookup), ...Object.keys(cLookup)]);
   allCntrs.forEach(cntr => {
     const masterRow = mLookup[cntr] || {};
-    const lineOp = clean(masterRow['line op'] || masterRow['Line Op'] || '');
+    const lineOp = clean(masterRow['line op'] || masterRow['Line Op'] || '').toUpperCase();
     allContainers.push({
       container: cntr.toUpperCase(),
       lineOp,
@@ -1341,7 +1340,7 @@ function buildTable(allContainers, filter) {
         <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
         <td><span class="type-badge" style="background:rgba(22,163,74,0.1);color:#16a34a;border:1px solid rgba(22,163,74,0.2)">OK</span></td>
         <td class="cntr-cell">${c.container.toUpperCase()}</td>
-        <td style="font-size:11px;color:var(--gray4)">${c.lineOp.toUpperCase()}</td>
+        <td style="font-size:11px;color:var(--gray4)">${c.lineOp}</td>
         <td style="font-size:10px;color:var(--gray4);font-family:var(--mono);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${c.sourceFile}">${shortFile}</td>
         <td></td><td></td><td></td><td></td>
       </tr>`);
@@ -1358,7 +1357,7 @@ function buildTable(allContainers, filter) {
           <td style="color:var(--gray3);font-family:var(--mono);font-size:11px">${n}</td>
           <td></td>
           <td class="cntr-cell">${isFirst||!isMulti?c.container.toUpperCase():`<span style="color:var(--gray3);font-family:var(--mono);font-size:11px">↳</span>`}</td>
-          <td style="font-size:11px;color:var(--gray4)">${isFirst||!isMulti?c.lineOp.toUpperCase():''}</td>
+          <td style="font-size:11px;color:var(--gray4)">${isFirst||!isMulti?c.lineOp:''}</td>
           <td style="font-size:10px;color:var(--gray4);font-family:var(--mono);max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${c.sourceFile||''}">${sf}</td>
           <td><span class="type-badge ${TC[d.type]||''}">${TL[d.type]||d.type}</span></td>
           <td style="color:var(--gray4);font-size:12px">${d.field!=='-'?d.field:''}</td>
