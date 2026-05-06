@@ -983,9 +983,11 @@ async function runComparison() {
 
     // Build precompare toggles
     buildPrecompareToggles();
+    hideSpinner();
     showPrecompare();
 
   } catch(err) {
+    hideSpinner();
     showErrorModal('Sistema', 'Error inesperado', err.message);
   }
 
